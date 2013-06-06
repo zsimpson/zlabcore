@@ -1,0 +1,490 @@
+!delete root
+
+!createfont name=controls file='verdana.ttf' size=10
+!createfont name=header file='arialbd.ttf' size=12
+!createfont name=subheader file='arialbd.ttf' size=10
+!createfont name=button file='ariblk.ttf' size=10
+
+//!palette key=invisible val=0
+//!palette key=panel val=0xA8897970
+//!palette key=tabButton val=0x90707060
+//!palette key=tabButtonSelected val=0x90707090
+//!palette key=header val=0x70709060
+//!palette key=textMark val=0x70709090
+//!palette key=text val=0xFFFFFFFF
+//!palette key=temp val=0x6C7B8BFF
+
+//!palette key=button val=0x90707060
+//!palette key=buttonPressed val=0x907070FF
+//!palette key=buttonSelected val=0x70709060
+//!palette key=buttonDisabled val=0x70707020
+//!palette key=buttonTextDisabled val=0x808080FF
+
+//!palette key=button val=0xa8a8a8FF
+//!palette key=buttonPressed val=0x4040C0FF
+//!palette key=buttonSelected val=0x4040c0FF
+//!palette key=buttonDisabled val=0x404040FF
+//!palette key=buttonTextDisabled val=0xa0a0a0FF
+
+:styleGlobal = ZUI {
+	font = controls
+
+	panelColor = 0x909090FF
+	buttonColor = 0xa8a8a8FF
+	buttonPressedColor = 0x7878C0FF
+	buttonDisabledColor = 0x808080FF
+	buttonDisabledTextColor = 0x707070FF
+	buttonSelectedColor = 0x60708fFF
+	buttonTextColor = 0x000000FF
+	buttonCheckColor = 0x000000FF
+	textColor = 0x000000FF
+	checkTextColor = 0x000000FF
+	radioButtonBoxCheckColor = 0x000000FF
+	radioButtonTextColor = 0x000000FF
+	varTextColor = 0xE0E090FF
+	varTextColorDisabled = 0x777777FF
+	sliderLineColor = 0x000000FF
+	sliderHandleColor = 0xFFFFFFFF
+	textEditTextColor = 0xFFFFFFFF
+	textEditTextColorDisabled = 0x777777FF
+	textEditMarkColor = 0x200080FF
+
+	:styleGroupL = ZUI {
+		layout = pack
+		pack_side = l
+		panelColor = 0
+		layout_padX = 2
+		layout_padY = 2
+	}
+
+	:styleGroupT = ZUI {
+		layout = pack
+		pack_side = t
+		panelColor = 0
+		layout_padX = 2
+		layout_padY = 2
+	}
+	
+	:styleGroupTChecks = ZUI {
+		layout = pack
+		pack_side = t
+		panelColor = 0
+		layout_padX = 2
+		layout_padY = -3
+			// -3 to overcome increased dirty area for check rendering
+	}
+	
+
+	:styleSectionHeader = ZUI {
+		panelColor = 0x8080A0FF
+		layout_padY = 2
+		pack_fillLast = 1
+		font = header
+		textColor = 0xFFFFFFFF
+	}
+
+	:styleSubheader = ZUI {
+		font = subheader
+		textColor = 0x202060FF
+	}
+
+	:styleIndent1 = ZUI {
+		layout = pack
+		pack_side = t
+		layout_padX = 2
+		layout_padY = 2
+		panelFrame = 3
+		panelColor = 0x989898FF
+	}
+
+	:styleIndent2 = ZUI {
+		layout = pack
+		pack_side = t
+		layout_padX = 2
+		layout_padY = 2
+		panelFrame = 3
+		panelColor = 0x808080FF
+	}
+
+	:styleIndent3 = ZUI {
+		layout = pack
+		pack_side = t
+		layout_padX = 2
+		layout_padY = 2
+		panelFrame = 3
+		panelColor = 0x6C6C6CFF
+	}
+
+	:styleTextEdit = ZUI {
+		panelFrame = 2
+		panelColor = 0x505050FF
+	}
+
+	:styleDialog = ZUI {
+		parent = root
+		pack_side = t
+		panelColor = 0xB0B0B0FF
+		layout_padY = 10
+		layout_padX = 10
+		pack_fillOpposite = 1
+		panelFrame = 4
+		panelConsumeClicks = 1
+			// prevent zui's underneath getting clicks on this dialog
+		permitTranslate = 1
+			// this allows the dialog to be moved by the user with left-click drag
+	}
+
+	:styleDialogTitle = ZUI {
+		font = header
+		textColor = 0x000000FF
+	}
+
+	:styleRedButton = ZUI {
+		buttonColor = 0xE47A7AFF
+		buttonPressedColor = 0xFF5A5AFF
+	}
+}
+
+:root = ZUIPanel {
+	+style = styleGlobal
+
+	:pluginPanel = ZUIPluginView {
+		layoutManual = 1
+		layoutManual_x = '0'
+		layoutManual_y = '0'
+		layoutManual_w = 'W'
+		layoutManual_h = 'H'
+		panelColor = 0
+	}
+
+	:controlPanel = ZUIPanel {
+		layoutManual = 1
+		layoutManual_x = 'W 330 -'
+		layoutManual_y = '0'
+		layoutManual_w = '330'
+		layoutManual_h = 'H'
+
+		hidden = 1
+		layout = pack
+		pack_side = t
+		pack_fillLast = 1
+		pack_fillOpposite = 1
+		layout_cellFill = w
+		layout_padY = 2
+
+		panelColor = 0xc0c0c0ff
+
+		: = ZUIPanel {
+			border_side = n
+			+style = styleSectionHeader
+			layout_cellFill = w
+			: = ZUIText {
+				layout_cellAlign = c
+				text = "Plugin Selection"
+				sendMsg = "type=ZUISet key=hidden toggle=1 toZUI=pluginButtonPanel"
+			}
+		}
+
+		:pluginButtonPanel = ZUIPanel {
+			hidden = 1
+			panelColor = 0
+			layout_cellFill = wh
+			layout_forceH = 100
+			textColor = 0x000000ff
+			selectedTextColor = 0xFFFFFFFF
+
+			*group = pluginChoiceButtons
+			layout = table
+			*layout_cellFill = wh
+			table_cols = 2
+			table_colDistributeEvenly = 1
+			layout_padX = 2
+			layout_padY = 2
+		}
+
+		:pluginExtraZUI = ZUIPanel {
+			pack_side = t
+			pack_fillOpposite = 1
+			layout_cellFill = wh
+		}
+
+		: = ZUIPanel {
+			+style = styleSectionHeader
+			layout_cellFill = w
+			: = ZUIText {
+				layout_cellAlign = c
+				text = "Global Variables"
+				sendMsg = "type=ZUISet key=hidden toggle=1 toZUI=globalVars"
+			}
+		}
+
+		:globalVars = ZUIVarEdit {
+			hidden = 1
+			panelColor = 0
+			layout_cellFill = wh
+			layout_forceH = 100
+			textColor = 0x000000ff
+			selectedTextColor = 0xFFFFFFFF
+
+			!sendMsgToThis type=ZUIVarEdit_Add regexp='^[^_]+$'
+			!sendMsgToThis type=ZUIVarEdit_Sort which=name
+		}
+
+		: = ZUIPanel {
+			+style = styleSectionHeader
+			layout_cellFill = w
+			: = ZUIText {
+				layout_cellAlign = c
+				text = "Plugin Variables"
+				sendMsg = "type=ZUISet key=hidden toggle=1 toZUI=pluginVars"
+			}
+		}
+
+		:pluginVars = ZUIVarEdit {
+			hidden = 0
+			panelColor = 0
+			layout_cellFill = wh
+			layout_forceH = 100
+			textColor = 0x000000ff
+			selectedTextColor = 0xFFFFFFFF
+
+			!sendMsgToThis type=ZUIVarEdit_Add regexp='^[^_]+$'
+			!sendMsgToThis type=ZUIVarEdit_Sort which=name
+		}
+	}
+
+	:fpsGraph = ZUIFPSGraph {
+		hidden = 1
+		layoutManual = 1
+		layoutManual_x = 'W w -'
+		layoutManual_y = '0'
+		layoutManual_w = '100'
+		layoutManual_h = '60'
+
+		clipToWindow = 1
+		fpsGraphColor = green
+		fpsGridColor = red
+		scale = 60
+		maxCount = 100
+	}
+}
+
+
+//
+// An attempt at generic dialogs via zuiDialog() in which client interior is 
+// inserted into this dialog template.  See zuiMessageBox as an example of
+// this use.
+// @TODO: allow for dynamically sized dialog based on size of client controls
+//
+: = ZUIPanel {
+	localName = zuiDialog
+	style = styleDialog
+	hidden = 1
+	layoutManual = 1
+	layoutManual_x = W w - 2 /
+	layoutManual_y = H h - 2 /
+	layoutManual_w = 500
+	layoutManual_h = 275
+	parent = root
+	layout_indentL = 5
+	layout_indentT = 5
+	layout_indentR = 5
+	layout_indentB = 5
+	pack_fillLast = 1
+	pack_side = t
+
+	: = ZUIPanel {
+		style = styleGroupL
+		layout_cellFill = wh
+
+		: = ZUIText {
+			localName = dlgTitle
+			style = styleDialogTitle
+			text = "Dialog Title"
+			
+		}
+	}
+
+	: = ZUILine {
+		lineEmbossed = 1
+	}
+	
+	: = ZUIPanel {
+		localName = dlgPanel
+		panelFrame = 3
+		layout_indentL = 15
+		layout_indentT = 15
+		layout_indentR = 0
+		layout_indentB = 0
+
+		*layout_cellFill = wh
+		*pack_fillOpposite = 1
+		*pack_fillLast = 1
+
+		// here is where user-defined dialog controls get inserted...
+
+	}
+
+	// by default we get an ok and cancel button, though whether these appear, what
+	// text they display, and what message they send is caller configurable.
+	: = ZUIPanel {
+		layout_cellAlign = c
+		style = styleGroupL
+
+		: = ZUIButton {
+			localName = dlgOK
+			text = "OK"
+			layout_forceW = 100
+		}
+
+		: = ZUIButton {
+			localName = dlgCancel
+			text = "Cancel"
+			layout_forceW = 100
+		}
+	}
+}
+
+// And a bigger version, until we have dynamic sizing; if the interior controls
+// name contains the string "DialogBig" then the zuiDialogBig container will be used.
+//
+: = ZUIPanel {
+	localName = zuiDialogBig
+	style = styleDialog
+	hidden = 1
+	layoutManual = 1
+	layoutManual_x = W w - 2 /
+	layoutManual_y = H h - 2 /
+	layoutManual_w = 620
+	layoutManual_h = 575
+	parent = root
+	layout_indentL = 5
+	layout_indentT = 5
+	layout_indentR = 5
+	layout_indentB = 5
+	pack_fillLast = 1
+	pack_side = t
+
+	: = ZUIPanel {
+		style = styleGroupL
+		layout_cellFill = wh
+
+		: = ZUIText {
+			localName = dlgTitle
+			style = styleDialogTitle
+			text = "Dialog Title"
+			
+		}
+	}
+
+	: = ZUILine {
+		lineEmbossed = 1
+	}
+	
+	: = ZUIPanel {
+		localName = dlgPanel
+		panelFrame = 3
+		layout_indentL = 15
+		layout_indentT = 15
+		layout_indentR = 0
+		layout_indentB = 0
+
+		*layout_cellFill = wh
+		*pack_fillOpposite = 1
+		*pack_fillLast = 1
+
+		// here is where user-defined dialog controls get inserted...
+
+	}
+
+	// by default we get an ok and cancel button, though whether these appear, what
+	// text they display, and what message they send is caller configurable.
+	: = ZUIPanel {
+		layout_cellAlign = c
+		style = styleGroupL
+
+		: = ZUIButton {
+			localName = dlgOK
+			text = "OK"
+			layout_forceW = 100
+		}
+
+		: = ZUIButton {
+			localName = dlgCancel
+			text = "Cancel"
+			layout_forceW = 100
+		}
+	}
+}
+
+
+//
+// The interior control(s) that are used to fashion a default "message box"
+//
+!palette key=zuiMessageDlgDefault   val=0xB0B0B0FF
+!palette key=zuiMessagePanelDefault val=0x909090FF
+	// the above are the colors for normal, grey message box
+!palette key=zuiMessageDlgHilight   val=0xE47A7AFF
+!palette key=zuiMessagePanelHilight val=0x94625DFF    
+	// the above are for "error" messages, reddish hue
+
+: = ZUIText {
+	localName = messageBoxText
+	parent = root
+	hidden = 1
+
+	style=styleGlobal
+
+	layout_cellFill = wh
+	pack_fillOpposite = 1
+	pack_fillLast = 1
+
+	text = ""
+	wordWrap = 1
+	multiline = 1
+
+	layout_forceH = 150
+	layout_forceW = 480
+}
+
+: = ZUIText {
+	localName = messageBoxTextDialogBig
+	parent = root
+	hidden = 1
+
+	style=styleGlobal
+
+	layout_cellFill = wh
+	pack_fillOpposite = 1
+	pack_fillLast = 1
+
+	text = ""
+	wordWrap = 1
+	multiline = 1
+
+	layout_forceH = 450
+	layout_forceW = 600
+}
+
+: = ZUIPanel {
+	localName = progressBoxInsert
+	parent = root
+	hidden = 1
+	
+	style=styleGlobal
+
+	layout_cellFill = w
+	layout_forceH = 150
+
+	pack_side = t
+	pack_fillOpposite = 1
+
+	: = ZUIText {
+		localName = progressBoxText
+		text = ""
+		wordWrap = 1
+		multiline = 1
+		layout_forceW = 480
+
+	}
+}
