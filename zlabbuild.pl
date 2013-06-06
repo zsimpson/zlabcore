@@ -30,7 +30,7 @@ $verbose = 0;
 print "Determining platform and svn revision\n";
 $platform = determinePlatform();
 my $svnRev = svnRevision();
-print "Platform=$platform snvRev=$svnRev\n";
+print "Platform=$platform svnRev=$svnRev\n";
 
 # FIND the critical folders, @TODO create them if not found
 $sdkDir    = findDirectory( qw^../sdkpub^ );
@@ -1358,8 +1358,14 @@ sub svnRevision( $ ) {
 	$str =~ /Revision: (\d+)/;
 	$rev = $1;
 	if( $rev eq '' ) {
-		print "Unable to determine svn revision.\n";
-		$rev = 'unknown version';
+		print "Unable to determine svn revision...using date...\n";
+		($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+		$year -= 100;
+		$mon  += 1;
+		if( $mon < 10 ) {
+			$mon = "0$mon";
+		}
+		$rev = "$year$mon$mday";
 	}
 	return $rev;
 }
