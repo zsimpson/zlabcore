@@ -1530,7 +1530,7 @@ if( -d "$devDir/amd64" && platformBuild64Bit() ) {
 	elsif( $platform eq 'macosx'){
 		$ver = `g++ --version`;
 		# @TODO: Setup $devVersion here 
-		if( $ver !~ /g\+\+/ ) {
+		if( $ver !~ /g\+\+/ && $ver !~ /LLVM/ ) {
 			return "Unable to run g++";
 		}
 		# Test for Objective-C -- the native filedialogs require this.  If you're not using them, you may
