@@ -64,8 +64,13 @@
 #endif
 
 // SDK includes:
+#ifdef __APPLE__
+#include "OpenGL/gl.h"
+#include "OpenGL/glu.h"
+#else
 #include "GL/gl.h"
 #include "GL/glu.h"
+#endif
 #include "GL/glfw.h"
 #ifdef ZMSG_MULTITHREAD
 // @ZBSIF extraDefines( 'ZMSG_MULTITHREAD' )
