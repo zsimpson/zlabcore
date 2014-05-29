@@ -366,7 +366,9 @@ if( $ARGV[0] ) {
 		&{'config_' . $configName}( 1 );
 		analyzeUsedFiles();
 		print "Performing clean build+package for configuration \"$configName\"...\n";
-		&compileAndTestSDKsInOrder( @configUsedSDKs );
+		if( !$ARGV[1] || $ARGV[1] ne "nosdk" ) {
+			&compileAndTestSDKsInOrder( @configUsedSDKs );
+		}
 		createMakeFileCleanBuildPackage();
 		exit;
 	}
