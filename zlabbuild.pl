@@ -514,13 +514,14 @@ while( 1 ) {
 			# MAKE a hash from the currently selected plugins so that they will show up in the menu
 			my %configs;
 			foreach( @configNames ) {
-#				# @TODO: isvalid fns for named configs as prereq for inclusion?
-#				if( ( $_ eq 'clsb' && -d '_zmoil' ) ||
-#					( $_ =~ /kin_/ && -d '_kin' ) || 
-#					( $_ =~ /stopflow/ && -d '_stopflow' ) ||
-#					( $_ =~ /chakra/ && -d '_chakra' ) ) {
+				# @TODO: isvalid fns for named configs as prereq for inclusion?
+				if( ( $_ eq 'none' ) ||
+					( $_ eq 'clsb' && -d '../plug_clsb' ) ||
+					( $_ =~ /kin_/ && -d '../plug_kintek' ) || 
+					( $_ =~ /stopflow/ && -d '../plug_kintek' ) ||
+					( $_ =~ /chakra/ && -d '../plug_blom' ) ) {
 					$configs{$_} = 0;
-#				}
+				}
 			}
 
 			%configs = radioMenu( %configs );
