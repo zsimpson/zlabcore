@@ -878,7 +878,12 @@ sub analyzeUsedFiles {
 		print "\n  *** WARNING: using older glfw library on $platform for KinTek application!\n";
 	}
 
-	@configUsedSDKs = keys %usedSDKs;
+	@configUsedSDKs = sort( keys %usedSDKs );
+		# TFB added sort because I need clapack to get built before levmar.
+		# This seems as good as not since previously the order was somehwat random.
+		# The right way to do this is to maintain the order of the sdks as specified in
+		# modules when usedSDKs is being populated, so that the user can control this.
+
 
 	# DUMP used
 	if( $verbose ) {
