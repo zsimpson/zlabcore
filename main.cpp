@@ -966,10 +966,6 @@ int main( int argc, char **argv )
 	// CREATE window
 	int width  = 640;
 	int height = 480;
-	#ifdef ZMOIL
-		width = 1024;
-		height = 664;	// default aspect to create square model view area
-	#endif
 	bFullScreen = options.getI( "fullscreen" );
 	GLFWvidmode desktopMode;
 	glfwGetDesktopMode( &desktopMode );
@@ -981,6 +977,12 @@ int main( int argc, char **argv )
 	glfwOpenWindowHint( GLFW_ACCUM_BLUE_BITS, 8 );
 	glfwOpenWindowHint( GLFW_ACCUM_GREEN_BITS, 8 );
 	glfwOpenWindowHint( GLFW_ACCUM_ALPHA_BITS, 8 );
+	#if defined(KIN_PRO) || defined(KIN_DEMO) || defined(KIN_DEV)
+		glfwOpenWindowHint( GLFW_FSAA_SAMPLES, 4 );
+		// I think this is a reasonable default for _everyone_, but don't want to surprise anyone, like SG.
+		// Note that this does not _enable_ antialiasing, but these sample buffers are required if you will 
+		// use AA.
+	#endif
 	trace( "Calling glfowOpenWindow() with width=%d, height=%d, fullscreen=%d ...\n", width, height, bFullScreen );
 	int ret = glfwOpenWindow( width, height, 8, 8, 8, 8, 16, 8, bFullScreen ? GLFW_FULLSCREEN : GLFW_WINDOW );
 	trace( "glfwOpenWindow() returned %s (%d)\n", ret ? "success!" : "FAILED!", ret );
