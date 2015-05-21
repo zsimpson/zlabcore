@@ -872,11 +872,12 @@ sub analyzeUsedFiles {
 	# use 2.7.2, so hopefully we'll run into this on a machine we can debug on and solve this 
 	# problem correctly.  TFB 10 June 2012
 	#
-	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 && $platform eq 'win32' ) {
-		delete $usedSDKs{'glfw-2.7.2'};
-		$usedSDKs{'glfw'}++;
-		print "\n  *** WARNING: using older glfw library on $platform for KinTek application!\n";
-	}
+#	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 && $platform eq 'win32' ) {
+#		delete $usedSDKs{'glfw-2.7.2'};
+#		$usedSDKs{'glfw'}++;
+#		print "\n  *** WARNING: using older glfw library on $platform for KinTek application!\n";
+#	}
+# removing this 05.21.15 per Ken; remove this commented code at year end.  May go back to it. (tfb)
 
 	@configUsedSDKs = sort( keys %usedSDKs );
 		# TFB added sort because I need clapack to get built before levmar.
