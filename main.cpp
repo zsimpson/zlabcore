@@ -977,11 +977,6 @@ int main( int argc, char **argv )
 	glfwOpenWindowHint( GLFW_ACCUM_BLUE_BITS, 8 );
 	glfwOpenWindowHint( GLFW_ACCUM_GREEN_BITS, 8 );
 	glfwOpenWindowHint( GLFW_ACCUM_ALPHA_BITS, 8 );
-	#if defined(__APPLE__) && (defined(KIN_PRO) || defined(KIN_DEMO) || defined(KIN_DEV))
-		glfwOpenWindowHint( GLFW_FSAA_SAMPLES, 4 );
-		// Note that this does not _enable_ antialiasing, but these sample buffers are required if you will 
-		// use AA.  This is apple-only for kintek because win32 kintek uses glfw2.5 which has no FSAA flag.
-	#endif
 	trace( "Calling glfowOpenWindow() with width=%d, height=%d, fullscreen=%d ...\n", width, height, bFullScreen );
 	int ret = glfwOpenWindow( width, height, 8, 8, 8, 8, 16, 8, bFullScreen ? GLFW_FULLSCREEN : GLFW_WINDOW );
 	trace( "glfwOpenWindow() returned %s (%d)\n", ret ? "success!" : "FAILED!", ret );
