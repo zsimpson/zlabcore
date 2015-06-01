@@ -112,6 +112,8 @@ sdkSetup();
 #
 # Config: Kin
 #
+$kinVersionMajor = 5;
+$kinVersionMinor = 1;
 @config_kin_extraMenu = (
 	"   kin: Add a hardware key to kinusbkeys (resets key memory)" => sub {
 		print "Connect the SecuTech key and press ENTER\n";
@@ -176,7 +178,7 @@ sub config_kin_pro {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version 5.1.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Pro';
@@ -196,7 +198,7 @@ sub config_kin_dev {
 		@configPlugins = ( 'kin' );
 		@configDefines = ( 'KIN' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version 5.1.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Dev';
@@ -216,7 +218,7 @@ sub config_kin_dev64 {
 		@configPlugins = ( 'kin' );
 		@configDefines = ( 'KIN' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV64 Version 5.1.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV64 Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Dev64';
