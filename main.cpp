@@ -1062,11 +1062,7 @@ int main( int argc, char **argv )
 		// @TODO: This should probably move into platform code once I figure out how to do it for mac and linux
 		void *hIcon = LoadIcon( _hInstance, (char*)(101) );
 		HWND hWnd = (HWND)glfwZBSExt_GetHWND();
-		#ifdef POINTER_64
-				SetClassLong( hWnd, GCLP_HICON, (long)hIcon );
-		#else
-				SetClassLong(hWnd, GCLP_HICON, (long)hIcon);
-		#endif
+		SetClassLongPtr( hWnd, GCLP_HICON, (long)hIcon );
 	#endif
 
 	int running = 1;
