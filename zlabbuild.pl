@@ -45,42 +45,11 @@ if( ! -e "$zlabDir/main.cpp" ) {
 	die( "Can't find main.cpp in $zlabDir" );
 }
 
-if( $platform eq 'win32' ) {
-      # mkness - On one 64-bit Win7 machine, this had to be specified as:
-	#$winSdkDir = "/Program Files/Microsoft SDKs/Windows/v6.0a";
-	# Investigation suggests that something is going wrong with the interpretation of environment variables.
-      # The environment variables were defined as:
-      #     ProgramFiles      = C:\Program Files
-      #     ProgramFiles(x86) = C:\Program Files (x86)
-      # but the $ENV{ProgramFiles} seemed to pick up the x86 one (??!!) which then didn't work.
-      # I don't know what is going on here, so I commented this for later investigation.
-	# The following code is thought to print out all the environment variables.
-	#print "Environment variables:\n";
-      #foreach $env_key (keys %ENV)
-      #{
-	#    my $env_value = $ENV{$env_key};
-      #    print "key=", $env_key, " value=", $env_value, "\n";
-	#}
-	# It prints "C:\Program Files (x86)" for key "PROGRAMFILES".
-	# If that is actually correct perl code for this, then this seems to imply that 
-	# $ENV is not correctly setup in perl.
-
-	$winSdkDir = "$ENV{ProgramFiles}/Microsoft SDKs/Windows/v6.0a";
-	$triedDirs = $winSdkDir;
-	if( ! -f "$winSdkDir/bin/al.exe" ) {
-		$winSdkDir =~ s/Files \(x86\)/Files/i;
-		if( ! -f "$winSdkDir/bin/al.exe" ) {
-			$triedDirs .= "\n$winSdkDir";
-			die "Can't local Windows SDK in any of:\n$triedDirs\n";
-		}
-	
-	}
-}
-
 # TEST the compiler
 # testCompiler( $platform );
   # I moved this after configLoad() because I want a config to be able to affect 
-  # which compiler settings are used (e.g. build64bit on windows)
+  # which compiler settings are used (e.g. build64bit on windows), so testCompiler()
+  # is called each time the main menu refreshes based on a user choice.  (tfb)
 
 # SETUP the sdk information and check on their availability
 $sdkBuildScript = "$sdkDir/sdkcore/sdkbuild.pl";
@@ -407,6 +376,9 @@ configLoad();
 print "Analyzing files...\n";
 pushCwd( $buildDir );
 analyzeUsedFiles();
+
+$devVersion="unknown";
+$winSdkDir="unknown";
 
 while( 1 ) {
 	cls();
@@ -1103,8 +1075,8 @@ sub createMakeFileAndOptionallyBuild {
 		win32releasedefines => [ qw^WIN32 NDEBUG _WINDOWS _MBCS^, @win32releasedefines, @configDefines, "SVN_REV=$svnRev" ],
 		win32debuglibs => [ (@win32InterfaceLibs, @win32debuglibs, qw^winmm.lib psapi.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib ole32.lib^) ],
 		win32releaselibs => [ (@win32InterfaceLibs, @win32releaselibs, qw^winmm.lib psapi.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib ole32.lib^) ],
-		win32debugexcludelibs => [ qw^libc.lib libcd.lib libcmt.lib msvcrt.lib msvcrtd.lib^ ],
-		win32releaseexcludelibs => [ qw^libc.lib libcd.lib libcmtd.lib msvcrt.lib msvcrtd.lib^ ],
+		win32debugexcludelibs => [ qw^msvcrt.lib msvcrtd.lib^ ],
+		win32releaseexcludelibs => [ qw^msvcrt.lib msvcrtd.lib^ ],
 		win32icon => $configIconWin32,
 		macosxicon => $configIconMacosx,
 		linuxdefines => [ @configDefines ],
@@ -1496,27 +1468,45 @@ sub testCompiler {
 	my( $platform ) = @_;
 
 	if( $platform eq 'win32' ) {
+		# win32 is our generic name for the windows platform, although maybe this should change.
+		# Normally we want to build 32bit versions of stuff with vs2008 since that's what we've
+		# done for the last 5+ years, but I want to allow 64bit builds if desired using vs2013.
+		# So there is a function platformBuild64Bit() which tells us if we should build with
+		# 64bit.  Right now that is determined based on the plugin configuration, but we could
+		# make it menu-selectable etc.  (tfb 2 june 2015)
+
 		my $build64bit = platformBuild64Bit();
-		print "Testing compiler on win32, 64bit build is $build64bit\n";
+		print "Testing compiler on win32, 64bit build = $build64bit\n";
 
-		# Look for vs2008 (9.0) first.
-		# TODO: add vs2013 to this if we want to build 32bit versions with vs2013
-		my @dirs = ( "$ENV{ProgramFiles}/microsoft visual studio 9.0/vc/bin", "$ENV{ProgramFiles} (x86)/microsoft visual studio 9.0/vc/bin", "/dev/vc98/bin", "$ENV{ProgramFiles}/visual studio/vc98/bin", "./dev/vc98/bin", "../dev/vc98/bin",
-					"../../dev/vc98/bin", "$ENV{ProgramFiles}/Microsoft Visual Studio/VC98/Bin" );
-
-		if( $build64bit ) {
-			# Look for vs2013 
-			@dirs = ( "$ENV{ProgramFiles}/microsoft visual studio 12.0/vc/bin/amd64", "$ENV{ProgramFiles} (x86)/microsoft visual studio 12.0/vc/bin/amd64" );
+		my @win64Dirs = ( "$ENV{ProgramFiles}/microsoft visual studio 12.0/vc/bin/amd64", "$ENV{ProgramFiles} (x86)/microsoft visual studio 12.0/vc/bin/amd64" );
+		if( $build64bit && ! findDirectory( @win64Dirs )  ) {
+			return "Configuration calls for 64bit build but amd64 tools not found.  Is Visual Studio 2013 installed?\n";
 		}
+
+		#
+		# If we're building 64bit, look for vs2013 first.  Else look for vs2008 first.  But look for them both either way.
+		#
+		my @dirs = ();
+		push @dirs, @win64Dirs if $build64bit;
+		push @dirs, ( "$ENV{ProgramFiles}/microsoft visual studio 9.0/vc/bin", "$ENV{ProgramFiles} (x86)/microsoft visual studio 9.0/vc/bin" );
+		push @dirs, @win64Dirs if !$build64bit;
+		#my @vc98dirs = ( "/dev/vc98/bin", "$ENV{ProgramFiles}/visual studio/vc98/bin", "./dev/vc98/bin", "../dev/vc98/bin", "../../dev/vc98/bin", "$ENV{ProgramFiles}/Microsoft Visual Studio/VC98/Bin" );
+			# I think we can ditch these by now?
 
 		$devDir = findDirectory( @dirs );		
 		$devDir || return "Unable to find the windows compiler.";
 
-		if( $build64bit ) {
-			$ENV{path} = "/windows/system32;$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;/Program Files (x86)/Windows Kits/8.1/bin/x64;/Program Files (x86)/MSBuild/12.0/bin/amd64";
+		if( $devDir =~ /12\.0/ ) {
+			# This may need some work.  I am assuming here that you have 64bit tools installed on 64bit windows.  This because the whole reason
+			# to support vs2013 was to get support for building 64bit apps for windows, and almost all installs of win7 and later are 64bit.
+			my @sdkDirs = ( "$ENV{ProgramFiles}/Windows Kits/8.1", "$ENV{ProgramFiles} (x86)/Windows Kits/8.1" );
+			$winSdkDir = findDirectory( @sdkDirs );
+			$ENV{path} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin/x64;/Program Files (x86)/MSBuild/12.0/bin/amd64;" . $ENV{PATH};
 		}
 		else {
-			$ENV{path} = "/windows/system32;$devDir;$devDir/../vcpackages;$devDir/../../common7/ide;$winSdkDir/bin;/Program Files (x86)/CMake/bin;$winSdkDir/bin";
+			my @sdkDirs = ( "$ENV{ProgramFiles}/Microsoft SDKs/Windows/v6.0a", "$ENV{ProgramFiles} (x86)/Microsoft SDKs/Windows/v6.0a" );
+			$winSdkDir = findDirectory( @sdkDirs );
+			$ENV{path} = "$devDir;$devDir/../vcpackages;$devDir/../../common7/ide;$winSdkDir/bin;/Program Files (x86)/CMake/bin;$winSdkDir/bin;" . $ENV{PATH};
 		}
 
 		# TEST that the compiler is working and right version
@@ -1524,11 +1514,7 @@ sub testCompiler {
 		open( FILE, "__cl__" );
 		$result = <FILE>;
 		close( FILE );
-		my $goodCompiler = 0;
-		if( $build64bit && $result =~ /Compiler Version (18)/i ) {
-			$devVersion = $1;
-		}
-		elsif( !$build64bit && $result =~ /Compiler Version (1[2345])/i ) {
+		if( $result =~ /Compiler Version (1[23458])/i ) {
 			$devVersion = $1;
 		}
 		else {
@@ -1538,19 +1524,25 @@ sub testCompiler {
 
 		# TEST that the linker is working and right version
 		$result = `link`;
-		if( $build64bit && $result =~ /Linker Version 12/ ) {
-			# ok
+		if( $build64bit && $result =~ /Linker Version ([xyz]|12)/ ) {
+			# ok - have 64bit compiler
 		}
-		elsif( !$build64bit && $result =~ /Linker Version [6789]/ ) {
-			# ok
+		elsif( !$build64bit && $result =~ /Linker Version ([6789]|12)/ ) {
+			# ok - can build 32bit apps with these
 		}
 		else {
 			return "Unable to run link or wrong version of MSDEV 6.0, vs2008, or vs2013";
 		}
 
-		if( $build64bit ) {
-			$ENV{INCLUDE} = "$devDir/../../include;$winSdkDir/include";
-			$ENV{LIB} = "/Program Files (x86)/Microsoft Visual Studio 12.0/VC/LIB/amd64;/Program Files (x86)/Microsoft Visual Studio 12.0/VC/ATLMFC/LIB/amd64;/Program Files (x86)/Windows Kits/8.1/lib/winv6.3/um/x64";
+		if( $devVersion == 18 ) {
+			# vs2013
+			$ENV{INCLUDE} = "$devDir/../../include;$winSdkDir/include/shared;$winSdkDir/include/um";
+			if( $build64bit ) {
+				$ENV{LIB} = "$devDir/../../LIB/amd64;$winSdkDir/lib/winv6.3/um/x64";
+			}
+			else {
+				$ENV{LIB} = "$devDir/../../LIB;$winSdkDir/lib/winv6.3/um/x86";				
+			}
 		}
 		else {
 			$ENV{INCLUDE} = "$devDir/../include;$winSdkDir/include";
@@ -2399,8 +2391,8 @@ sub win32_createMakefile_VC90 {
 
 	map{ $_ =~ tr#/#\\#; $debLibs .= " $_ " } uniquify( (@{ $hash{win32debuglibs} }) );
 	map{ $_ =~ tr#/#\\#; $relLibs .= " $_ " } uniquify( (@{ $hash{win32releaselibs} }) );
-	map{ $_ =~ tr#/#\\#; $debExLibs .= " /nodefaultlib:" . "\"$_\"" } uniquify( @{ $hash{win32debugexcludelibs} } );
-	map{ $_ =~ tr#/#\\#; $relExLibs .= " /nodefaultlib:" . "\"$_\"" } uniquify( @{ $hash{win32releaseexcludelibs} } );
+	map{ $_ =~ tr#/#\\#; $debExLibs .= "$_," } uniquify( @{ $hash{win32debugexcludelibs} } );
+	map{ $_ =~ tr#/#\\#; $relExLibs .= " $_," } uniquify( @{ $hash{win32releaseexcludelibs} } );
 	my $subsystem = $hash{interface} eq 'console' ? '1' : '2';
 	my $console = $hash{interface} eq 'console' ? "_CONSOLE" : "";
 
@@ -2488,7 +2480,7 @@ sub win32_createMakefile_VC90 {
 						OutputFile=".\\Debug\\$name.exe"
 						LinkIncremental="2"
 						SuppressStartupBanner="true"
-						IgnoreDefaultLibraryNames="libc.lib,libcd.lib,libcmt.lib,msvcrt.lib,msvcrtd.lib"
+						IgnoreDefaultLibraryNames="$debExLibs"
 						GenerateDebugInformation="true"
 						ProgramDatabaseFile=".\\Debug\\$name.pdb"
 						SubSystem="$subsystem"
@@ -2587,7 +2579,7 @@ sub win32_createMakefile_VC90 {
 						OutputFile=".\\Release\\$name.exe"
 						LinkIncremental="2"
 						SuppressStartupBanner="true"
-						IgnoreDefaultLibraryNames="libc.lib,libcd.lib,libcmtd.lib,msvcrt.lib,msvcrtd.lib"
+						IgnoreDefaultLibraryNames="$relExLibs"
 						GenerateDebugInformation="true"
 						ProgramDatabaseFile=".\\Release\\$name.pdb"
 						SubSystem="$subsystem"
@@ -2731,23 +2723,23 @@ sub win32_createMakefile_VC120 {
 
 	my $includes;
 
-	map{ $_ =~ tr#/#\\#; $includes .= "$_," } uniquify( @{$hash{includes}} );
+	map{ $_ =~ tr#/#\\#; $includes .= "$_;" } uniquify( @{$hash{includes}} );
 	my $debLibs;
 	my $relLibs;
 	my $debExLibs;
 	my $relExLibs;
 	my $debDefines;
 	my $relDefines;
-	map{ $_ =~ tr#/#\\#; $debDefines .= ";$_" } uniquify( @{ $hash{win32debugdefines} } );
-	map{ $_ =~ tr#/#\\#; $relDefines .= ";$_" } uniquify( @{ $hash{win32releasedefines} } );
+	map{ $_ =~ tr#/#\\#; $debDefines .= "$_;" } uniquify( @{ $hash{win32debugdefines} } );
+	map{ $_ =~ tr#/#\\#; $relDefines .= "$_;" } uniquify( @{ $hash{win32releasedefines} } );
 	map{ $_ =~ tr#/#\\#; } uniquify @files;
-	$debDefines =~ s#\"#\\&quot;#g;
-	$relDefines =~ s#\"#\\&quot;#g;
+#	$debDefines =~ s#\"#\\&quot;#g;
+#	$relDefines =~ s#\"#\\&quot;#g;
 
-	map{ $_ =~ tr#/#\\#; $debLibs .= " $_ " } uniquify( (@{ $hash{win32debuglibs} }) );
-	map{ $_ =~ tr#/#\\#; $relLibs .= " $_ " } uniquify( (@{ $hash{win32releaselibs} }) );
-	map{ $_ =~ tr#/#\\#; $debExLibs .= " /nodefaultlib:" . "\"$_\"" } uniquify( @{ $hash{win32debugexcludelibs} } );
-	map{ $_ =~ tr#/#\\#; $relExLibs .= " /nodefaultlib:" . "\"$_\"" } uniquify( @{ $hash{win32releaseexcludelibs} } );
+	map{ $_ =~ tr#/#\\#; $debLibs .= " $_;" } uniquify( (@{ $hash{win32debuglibs} }) );
+	map{ $_ =~ tr#/#\\#; $relLibs .= " $_;" } uniquify( (@{ $hash{win32releaselibs} }) );
+	map{ $_ =~ tr#/#\\#; $debExLibs .= "$_;" } uniquify( @{ $hash{win32debugexcludelibs} } );
+	map{ $_ =~ tr#/#\\#; $relExLibs .= "$_;" } uniquify( @{ $hash{win32releaseexcludelibs} } );
 	my $subsystem = $hash{interface} eq 'console' ? '1' : '2';
 	my $console = $hash{interface} eq 'console' ? "_CONSOLE" : "";
 
@@ -2853,8 +2845,8 @@ sub win32_createMakefile_VC120 {
     <ClCompile>
       <AdditionalOptions>/wd4996 /wd4786  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;..\\plug_kintek;..\\plug_kintek\\_kin;..\\plug_kintek\\_sfzfit;..\\plug_kintek\\_shared;..\\plug_kintek\\_stopflow;\\usr\\X11R6\\include;\\usr\\include;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\INCLUDE;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt;C:\\kintek\\explorer\\sdkpub\\freeimage\\Dist;C:\\kintek\\explorer\\sdkpub\\freeimage\\Source;C:\\kintek\\explorer\\sdkpub\\freetype\\lib;C:\\kintek\\explorer\\sdkpub\\glfw-2.7.2\\include;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\include;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\include\\gsl;C:\\kintek\\explorer\\sdkpub\\levmar-2.6\\;C:\\kintek\\explorer\\sdkpub\\pcre;C:\\kintek\\explorer\\sdkpub\\pthread2w32;C:\\kintek\\explorer\\sdkpub\\usbkey_secutech;C:\\kintek\\explorer\\zbslib;C:\\kintek\\explorer\\zlabcore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POINTER_64=__ptr64;_CRT_SECURE_NO_WARNINGS=1;WIN32;_DEBUG;_WINDOWS;DEBUG_TIME_RUNNING_BACKWARDS;FITSET_MULTITHREAD;FREEIMAGE_LIB;KIN;KIN_DEV;KIN_MULTITHREAD;NATIVE_FILE_DIALOGS;SFFAST;SVN_REV=150529;TITLE="KinTek Global Kinetic Explorer DEV64 Version 5.1.150529. Copyright Kenneth A. Johnson and KinTek Corporation";TRACE_TIMESTAMPED;USE_KINFIT_V2;WIN32;ZHASH_THREADSAFE;ZMSG_MULTITHREAD;_DEBUG;_MBCS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$includes%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>POINTER_64=__ptr64;_CRT_SECURE_NO_WARNINGS=1;WIN32;_DEBUG;_WINDOWS;$debDefines$console;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -2871,10 +2863,10 @@ sub win32_createMakefile_VC120 {
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\blas.lib;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\lapack.lib;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\libf2c.lib;C:\\kintek\\explorer\\sdkpub\\freeimage\\Dist\\freeimaged.lib;C:\\kintek\\explorer\\sdkpub\\freetype\\lib\\libttf.lib;C:\\kintek\\explorer\\sdkpub\\glfw-2.7.2\\lib\\win32\\glfw.lib;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\vc8\\libgsl\\Debug-StaticLib\\libgsl_d.lib;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\vc8\\libgslcblas\\Debug-StaticLib\\libgslcblas_d.lib;C:\\kintek\\explorer\\sdkpub\\levmar-2.6\\levmar_win32\\Release\\levmar_win32.lib;C:\\kintek\\explorer\\sdkpub\\pcre\\pcreposix.lib;C:\\kintek\\explorer\\sdkpub\\pthread2w32\\pthreadVC2.lib;C:\\kintek\\explorer\\sdkpub\\usbkey_secutech\\UniKey.lib;advapi32.lib;gdi32.lib;glu32.lib;kernel32.lib;ole32.lib;opengl32.lib;psapi.lib;shell32.lib;user32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$debLibs%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\\Debug\\zlab.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <IgnoreSpecificDefaultLibraries>libc.lib;libcd.lib;libcmt.lib;msvcrt.lib;msvcrtd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>$debExLibs%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\\Debug\\zlab.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -2899,8 +2891,8 @@ sub win32_createMakefile_VC120 {
     <ClCompile>
       <AdditionalOptions>/wd4996 /wd4786  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;..\\plug_kintek;..\\plug_kintek\\_kin;..\\plug_kintek\\_sfzfit;..\\plug_kintek\\_shared;..\\plug_kintek\\_stopflow;\\usr\\X11R6\\include;\\usr\\include;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\INCLUDE;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt;C:\\kintek\\explorer\\sdkpub\\freeimage\\Dist;C:\\kintek\\explorer\\sdkpub\\freeimage\\Source;C:\\kintek\\explorer\\sdkpub\\freetype\\lib;C:\\kintek\\explorer\\sdkpub\\glfw-2.7.2\\include;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\include;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\include\\gsl;C:\\kintek\\explorer\\sdkpub\\levmar-2.6\\;C:\\kintek\\explorer\\sdkpub\\pcre;C:\\kintek\\explorer\\sdkpub\\pthread2w32;C:\\kintek\\explorer\\sdkpub\\usbkey_secutech;C:\\kintek\\explorer\\zbslib;C:\\kintek\\explorer\\zlabcore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POINTER_64=__ptr64;_CRT_SECURE_NO_WARNINGS=1;WIN32;_DEBUG;_WINDOWS;DEBUG_TIME_RUNNING_BACKWARDS;FITSET_MULTITHREAD;FREEIMAGE_LIB;KIN;KIN_DEV;KIN_MULTITHREAD;NATIVE_FILE_DIALOGS;SFFAST;SVN_REV=150529;TITLE="KinTek Global Kinetic Explorer DEV Version 5.1.150529. Copyright Kenneth A. Johnson and KinTek Corporation";TRACE_TIMESTAMPED;USE_KINFIT_V2;WIN32;ZHASH_THREADSAFE;ZMSG_MULTITHREAD;_DEBUG;_MBCS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$includes%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>POINTER_64=__ptr64;_CRT_SECURE_NO_WARNINGS=1;WIN32;_DEBUG;_WINDOWS;$debDefines$console;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>.\\Debug/zlab.pch</PrecompiledHeaderOutputFile>
@@ -2916,10 +2908,10 @@ sub win32_createMakefile_VC120 {
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\blas.lib;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\lapack.lib;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\libf2c.lib;C:\\kintek\\explorer\\sdkpub\\freeimage\\Dist\\freeimaged.lib;C:\\kintek\\explorer\\sdkpub\\freetype\\lib\\libttf.lib;C:\\kintek\\explorer\\sdkpub\\glfw-2.7.2\\lib\\win32\\glfw.lib;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\vc8\\libgsl\\Debug-StaticLib\\libgsl_d.lib;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\vc8\\libgslcblas\\Debug-StaticLib\\libgslcblas_d.lib;C:\\kintek\\explorer\\sdkpub\\levmar-2.6\\levmar_win32\\Release\\levmar_win32.lib;C:\\kintek\\explorer\\sdkpub\\pcre\\pcreposix.lib;C:\\kintek\\explorer\\sdkpub\\pthread2w32\\pthreadVC2.lib;C:\\kintek\\explorer\\sdkpub\\usbkey_secutech\\UniKey.lib;advapi32.lib;gdi32.lib;glu32.lib;kernel32.lib;ole32.lib;opengl32.lib;psapi.lib;shell32.lib;user32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$debLibs%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\\Debug\\zlab.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <IgnoreSpecificDefaultLibraries>libc.lib;libcd.lib;libcmt.lib;msvcrt.lib;msvcrtd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>$debExLibs%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\\Debug\\zlab.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -2945,8 +2937,8 @@ sub win32_createMakefile_VC120 {
       <AdditionalOptions>/wd4996 /wd4786  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>.;..\\plug_kintek;..\\plug_kintek\\_kin;..\\plug_kintek\\_sfzfit;..\\plug_kintek\\_shared;..\\plug_kintek\\_stopflow;\\usr\\X11R6\\include;\\usr\\include;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\INCLUDE;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt;C:\\kintek\\explorer\\sdkpub\\freeimage\\Dist;C:\\kintek\\explorer\\sdkpub\\freeimage\\Source;C:\\kintek\\explorer\\sdkpub\\freetype\\lib;C:\\kintek\\explorer\\sdkpub\\glfw-2.7.2\\include;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\include;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\include\\gsl;C:\\kintek\\explorer\\sdkpub\\levmar-2.6\\;C:\\kintek\\explorer\\sdkpub\\pcre;C:\\kintek\\explorer\\sdkpub\\pthread2w32;C:\\kintek\\explorer\\sdkpub\\usbkey_secutech;C:\\kintek\\explorer\\zbslib;C:\\kintek\\explorer\\zlabcore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POINTER_64=__ptr64;_CRT_SECURE_NO_WARNINGS=1;NDEBUG;WIN32;_WINDOWS;DEBUG_TIME_RUNNING_BACKWARDS;FITSET_MULTITHREAD;FREEIMAGE_LIB;KIN;KIN_DEV;KIN_MULTITHREAD;NATIVE_FILE_DIALOGS;NDEBUG;SFFAST;SVN_REV=150529;TITLE="KinTek Global Kinetic Explorer DEV Version 5.1.150529. Copyright Kenneth A. Johnson and KinTek Corporation";TRACE_TIMESTAMPED;USE_KINFIT_V2;WIN32;ZHASH_THREADSAFE;ZMSG_MULTITHREAD;_MBCS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$includes%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>POINTER_64=__ptr64;_CRT_SECURE_NO_WARNINGS=1;NDEBUG;WIN32;_WINDOWS;$relDefines$console;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -2964,10 +2956,10 @@ sub win32_createMakefile_VC120 {
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\blas.lib;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\lapack.lib;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\libf2c.lib;C:\\kintek\\explorer\\sdkpub\\freeimage\\Dist\\freeimage.lib;C:\\kintek\\explorer\\sdkpub\\freetype\\lib\\libttf.lib;C:\\kintek\\explorer\\sdkpub\\glfw-2.7.2\\lib\\win32\\glfw.lib;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\vc8\\libgsl\\Release-StaticLib\\libgsl.lib;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\vc8\\libgslcblas\\Release-StaticLib\\libgslcblas.lib;C:\\kintek\\explorer\\sdkpub\\levmar-2.6\\levmar_win32\\Release\\levmar_win32.lib;C:\\kintek\\explorer\\sdkpub\\pcre\\pcreposix.lib;C:\\kintek\\explorer\\sdkpub\\pthread2w32\\pthreadVC2.lib;C:\\kintek\\explorer\\sdkpub\\usbkey_secutech\\UniKey.lib;advapi32.lib;gdi32.lib;glu32.lib;kernel32.lib;ole32.lib;opengl32.lib;psapi.lib;shell32.lib;user32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$relLibs%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\\Release\\zlab.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <IgnoreSpecificDefaultLibraries>libc.lib;libcd.lib;libcmtd.lib;msvcrt.lib;msvcrtd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>$relExLibs%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\\Release\\zlab.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -2993,8 +2985,8 @@ sub win32_createMakefile_VC120 {
       <AdditionalOptions>/wd4996 /wd4786  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>.;..\\plug_kintek;..\\plug_kintek\\_kin;..\\plug_kintek\\_sfzfit;..\\plug_kintek\\_shared;..\\plug_kintek\\_stopflow;\\usr\\X11R6\\include;\\usr\\include;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\INCLUDE;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt;C:\\kintek\\explorer\\sdkpub\\freeimage\\Dist;C:\\kintek\\explorer\\sdkpub\\freeimage\\Source;C:\\kintek\\explorer\\sdkpub\\freetype\\lib;C:\\kintek\\explorer\\sdkpub\\glfw-2.7.2\\include;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\include;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\include\\gsl;C:\\kintek\\explorer\\sdkpub\\levmar-2.6\\;C:\\kintek\\explorer\\sdkpub\\pcre;C:\\kintek\\explorer\\sdkpub\\pthread2w32;C:\\kintek\\explorer\\sdkpub\\usbkey_secutech;C:\\kintek\\explorer\\zbslib;C:\\kintek\\explorer\\zlabcore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POINTER_64=__ptr64;_CRT_SECURE_NO_WARNINGS=1;NDEBUG;WIN32;_WINDOWS;DEBUG_TIME_RUNNING_BACKWARDS;FITSET_MULTITHREAD;FREEIMAGE_LIB;KIN;KIN_DEV;KIN_MULTITHREAD;NATIVE_FILE_DIALOGS;NDEBUG;SFFAST;SVN_REV=150529;TITLE="KinTek Global Kinetic Explorer DEV Version 5.1.150529. Copyright Kenneth A. Johnson and KinTek Corporation";TRACE_TIMESTAMPED;USE_KINFIT_V2;WIN32;ZHASH_THREADSAFE;ZMSG_MULTITHREAD;_MBCS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$includes%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>POINTER_64=__ptr64;_CRT_SECURE_NO_WARNINGS=1;NDEBUG;WIN32;_WINDOWS;$relDefines$console;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -3012,10 +3004,10 @@ sub win32_createMakefile_VC120 {
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\blas.lib;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\lapack.lib;C:\\kintek\\explorer\\sdkpub\\CLAPACK-3.2.1\\win32\\prebuilt\\libf2c.lib;C:\\kintek\\explorer\\sdkpub\\freeimage\\Dist\\freeimage.lib;C:\\kintek\\explorer\\sdkpub\\freetype\\lib\\libttf.lib;C:\\kintek\\explorer\\sdkpub\\glfw-2.7.2\\lib\\win32\\glfw.lib;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\vc8\\libgsl\\Release-StaticLib\\libgsl.lib;C:\\kintek\\explorer\\sdkpub\\gsl-1.8\\vc8\\libgslcblas\\Release-StaticLib\\libgslcblas.lib;C:\\kintek\\explorer\\sdkpub\\levmar-2.6\\levmar_win32\\Release\\levmar_win32.lib;C:\\kintek\\explorer\\sdkpub\\pcre\\pcreposix.lib;C:\\kintek\\explorer\\sdkpub\\pthread2w32\\pthreadVC2.lib;C:\\kintek\\explorer\\sdkpub\\usbkey_secutech\\UniKey.lib;advapi32.lib;gdi32.lib;glu32.lib;kernel32.lib;ole32.lib;opengl32.lib;psapi.lib;shell32.lib;user32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$relLibs%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\\Release\\zlab.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <IgnoreSpecificDefaultLibraries>libc.lib;libcd.lib;libcmtd.lib;msvcrt.lib;msvcrtd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>$relExLibs%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\\Release\\zlab.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -3028,198 +3020,39 @@ sub win32_createMakefile_VC120 {
       <OutputFile>.\\Release\\zlab.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\\plug_kintek\\_kin\\cpui.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\cpui_datafit.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\cpui_datarepo.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\cpui_experiment.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\cpui_fitspace.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\cpui_model.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\cpui_project.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\dlg_freeenergy.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\dlg_misc.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\dlg_ratevconc.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\hermite_cubic.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_data.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_exp.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_export_sim.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_exp_series.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_fit.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_fitspace2.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_fitspace_plotdata.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_fit_levmar.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_fit_zfit.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_loadsave.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_modelgraph.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_modelv1.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_options.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_spectra.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_system.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_test.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_thermocycle.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_thread2.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_threadpool.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_usbkey.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\kin_util.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_importdata.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_plots.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_plots_exp.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_plots_fitspace.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_plots_modelviz.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_plots_repo.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_zuilist.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_zuilist_data.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\ui_zuilist_fitspace.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\zui_fitspace.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\zui_flowview.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\zui_modelview.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\zui_varseries.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_kin\\_kin.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_shared\\matrixn.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_shared\\matrixn_lu.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_shared\\matrixn_util.cpp" />
-    <ClCompile Include="..\\plug_kintek\\_shared\\sffit_shared.cpp" />
-    <ClCompile Include="..\\zbslib\\fftgsl.cpp" />
-    <ClCompile Include="..\\zbslib\\filedialog_native.cpp" />
-    <ClCompile Include="..\\zbslib\\fitdata.cpp" />
-    <ClCompile Include="..\\zbslib\\kineticbase.cpp" />
-    <ClCompile Include="..\\zbslib\\plot.cpp" />
-    <ClCompile Include="..\\zbslib\\pmutex.cpp" />
-    <ClCompile Include="..\\zbslib\\tbutil.cpp" />
-    <ClCompile Include="..\\zbslib\\zbitmapdesc.cpp" />
-    <ClCompile Include="..\\zbslib\\zbits.cpp" />
-    <ClCompile Include="..\\zbslib\\zcmdparse.cpp" />
-    <ClCompile Include="..\\zbslib\\zconfig.cpp" />
-    <ClCompile Include="..\\zbslib\\zconsole.cpp" />
-    <ClCompile Include="..\\zbslib\\zendian.cpp" />
-    <ClCompile Include="..\\zbslib\\zfilespec.cpp" />
-    <ClCompile Include="..\\zbslib\\zfitter.cpp" />
-    <ClCompile Include="..\\zbslib\\zfitterkin.cpp" />
-    <ClCompile Include="..\\zbslib\\zglfont.cpp" />
-    <ClCompile Include="..\\zbslib\\zglfwtools.cpp" />
-    <ClCompile Include="..\\zbslib\\zglgfiletools.cpp" />
-    <ClCompile Include="..\\zbslib\\zglmatlight.cpp" />
-    <ClCompile Include="..\\zbslib\\zgltools.cpp" />
-    <ClCompile Include="..\\zbslib\\zgraphfile.cpp" />
-    <ClCompile Include="..\\zbslib\\zhash2d.cpp" />
-    <ClCompile Include="..\\zbslib\\zhashtable.cpp" />
-    <ClCompile Include="..\\zbslib\\zintegrator.cpp" />
-    <ClCompile Include="..\\zbslib\\zintegrator_gsl.cpp" />
-    <ClCompile Include="..\\zbslib\\zmat.cpp" />
-    <ClCompile Include="..\\zbslib\\zmathtools.cpp" />
-    <ClCompile Include="..\\zbslib\\zmat_gsl.cpp" />
-    <ClCompile Include="..\\zbslib\\zmousemsg_glfw.cpp" />
-    <ClCompile Include="..\\zbslib\\zmsg.cpp" />
-    <ClCompile Include="..\\zbslib\\zmsgzocket.cpp" />
-    <ClCompile Include="..\\zbslib\\zocket.cpp" />
-    <ClCompile Include="..\\zbslib\\zplatform.cpp" />
-    <ClCompile Include="..\\zbslib\\zplugin.cpp" />
-    <ClCompile Include="..\\zbslib\\zprof.cpp" />
-    <ClCompile Include="..\\zbslib\\zprofglgui.cpp" />
-    <ClCompile Include="..\\zbslib\\zrand.cpp" />
-    <ClCompile Include="..\\zbslib\\zregexp.cpp" />
-    <ClCompile Include="..\\zbslib\\zrgbhsv.cpp" />
-    <ClCompile Include="..\\zbslib\\zstr.cpp" />
-    <ClCompile Include="..\\zbslib\\ztime.cpp" />
-    <ClCompile Include="..\\zbslib\\ztmpstr.cpp" />
-    <ClCompile Include="..\\zbslib\\zui.cpp" />
-    <ClCompile Include="..\\zbslib\\zuibutton.cpp" />
-    <ClCompile Include="..\\zbslib\\zuicheck.cpp" />
-    <ClCompile Include="..\\zbslib\\zuicheckmulti.cpp" />
-    <ClCompile Include="..\\zbslib\\zuicolor.cpp" />
-    <ClCompile Include="..\\zbslib\\zuifilepicker.cpp" />
-    <ClCompile Include="..\\zbslib\\zuifpsgraph.cpp" />
-    <ClCompile Include="..\\zbslib\\zuiline.cpp" />
-    <ClCompile Include="..\\zbslib\\zuilist.cpp" />
-    <ClCompile Include="..\\zbslib\\zuipanel.cpp" />
-    <ClCompile Include="..\\zbslib\\zuiplot.cpp" />
-    <ClCompile Include="..\\zbslib\\zuiplot3d.cpp" />
-    <ClCompile Include="..\\zbslib\\zuipluginview.cpp" />
-    <ClCompile Include="..\\zbslib\\zuiradiobutton.cpp" />
-    <ClCompile Include="..\\zbslib\\zuislider.cpp" />
-    <ClCompile Include="..\\zbslib\\zuitabbutton.cpp" />
-    <ClCompile Include="..\\zbslib\\zuitabpanel.cpp" />
-    <ClCompile Include="..\\zbslib\\zuitext.cpp" />
-    <ClCompile Include="..\\zbslib\\zuitexteditor.cpp" />
-    <ClCompile Include="..\\zbslib\\zuivar.cpp" />
-    <ClCompile Include="..\\zbslib\\zuivaredit.cpp" />
-    <ClCompile Include="..\\zbslib\\zvars.cpp" />
-    <ClCompile Include="..\\zbslib\\zvec.cpp" />
-    <ClCompile Include="..\\zbslib\\zviewpoint.cpp" />
-    <ClCompile Include="..\\zbslib\\zviewpoint2.cpp" />
-    <ClCompile Include="..\\zbslib\\zwildcard.cpp" />
-    <ClCompile Include="..\\zlabcore\\main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\\plug_kintek\\_kin\\kingui.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_data.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_exp.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_fit.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_fitspace2.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_fitspace_plotdata.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_spectra.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_system.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_thread2.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\kin_threadpool.h" />
-    <ClInclude Include="..\\plug_kintek\\_kin\\zui_varseries.h" />
-    <ClInclude Include="..\\plug_kintek\\_shared\\matrixn.h" />
-    <ClInclude Include="..\\plug_kintek\\_shared\\matrixn_lu.h" />
-    <ClInclude Include="..\\plug_kintek\\_shared\\sffit_shared.h" />
-    <ClInclude Include="..\\zbslib\\fftgsl.h" />
-    <ClInclude Include="..\\zbslib\\filedialog_native.h" />
-    <ClInclude Include="..\\zbslib\\fitdata.h" />
-    <ClInclude Include="..\\zbslib\\kineticbase.h" />
-    <ClInclude Include="..\\zbslib\\plot.h" />
-    <ClInclude Include="..\\zbslib\\pmutex.h" />
-    <ClInclude Include="..\\zbslib\\tbutil.h" />
-    <ClInclude Include="..\\zbslib\\wingl.h" />
-    <ClInclude Include="..\\zbslib\\wintiny.h" />
-    <ClInclude Include="..\\zbslib\\zbitmapdesc.h" />
-    <ClInclude Include="..\\zbslib\\zbits.h" />
-    <ClInclude Include="..\\zbslib\\zcmdparse.h" />
-    <ClInclude Include="..\\zbslib\\zconfig.h" />
-    <ClInclude Include="..\\zbslib\\zconsole.h" />
-    <ClInclude Include="..\\zbslib\\zendian.h" />
-    <ClInclude Include="..\\zbslib\\zfilespec.h" />
-    <ClInclude Include="..\\zbslib\\zfitter.h" />
-    <ClInclude Include="..\\zbslib\\zfitterkin.h" />
-    <ClInclude Include="..\\zbslib\\zglfont.h" />
-    <ClInclude Include="..\\zbslib\\zglfwtools.h" />
-    <ClInclude Include="..\\zbslib\\zglgfiletools.h" />
-    <ClInclude Include="..\\zbslib\\zglmatlight.h" />
-    <ClInclude Include="..\\zbslib\\zgltools.h" />
-    <ClInclude Include="..\\zbslib\\zgraphfile.h" />
-    <ClInclude Include="..\\zbslib\\zhash2d.h" />
-    <ClInclude Include="..\\zbslib\\zhashtable.h" />
-    <ClInclude Include="..\\zbslib\\zhashtyped.h" />
-    <ClInclude Include="..\\zbslib\\zintegrator.h" />
-    <ClInclude Include="..\\zbslib\\zintegrator_gsl.h" />
-    <ClInclude Include="..\\zbslib\\zmat.h" />
-    <ClInclude Include="..\\zbslib\\zmathtools.h" />
-    <ClInclude Include="..\\zbslib\\zmat_gsl.h" />
-    <ClInclude Include="..\\zbslib\\zmousemsg.h" />
-    <ClInclude Include="..\\zbslib\\zmsg.h" />
-    <ClInclude Include="..\\zbslib\\zmsgzocket.h" />
-    <ClInclude Include="..\\zbslib\\zocket.h" />
-    <ClInclude Include="..\\zbslib\\zplugin.h" />
-    <ClInclude Include="..\\zbslib\\zprof.h" />
-    <ClInclude Include="..\\zbslib\\zprofglgui.h" />
-    <ClInclude Include="..\\zbslib\\zrand.h" />
-    <ClInclude Include="..\\zbslib\\zregexp.h" />
-    <ClInclude Include="..\\zbslib\\zrgbhsv.h" />
-    <ClInclude Include="..\\zbslib\\zstr.h" />
-    <ClInclude Include="..\\zbslib\\ztime.h" />
-    <ClInclude Include="..\\zbslib\\ztmpstr.h" />
-    <ClInclude Include="..\\zbslib\\zui.h" />
-    <ClInclude Include="..\\zbslib\\zuiplot3d.h" />
-    <ClInclude Include="..\\zbslib\\zuislider.h" />
-    <ClInclude Include="..\\zbslib\\zuitexteditor.h" />
-    <ClInclude Include="..\\zbslib\\zvars.h" />
-    <ClInclude Include="..\\zbslib\\zvec.h" />
-    <ClInclude Include="..\\zbslib\\zviewpoint.h" />
-    <ClInclude Include="..\\zbslib\\zviewpoint2.h" />
-    <ClInclude Include="..\\zbslib\\zwildcard.h" />
-  </ItemGroup>
+ENDOFVCPROJ
+
+	#
+	# Dump source files to VCPROJ
+	#
+	print VCPROJFILE "\t<ItemGroup>\n";
+	foreach $file( @files ) {
+		if( $file && $file !~ /\.h/ ) {
+			if( File::Spec->file_name_is_absolute($file) ) {
+				$file = File::Spec->abs2rel($file);
+			}
+			$file =~ tr#/#\\#;	
+			print VCPROJFILE "\t\t<ClCompile Include=\"$file\" />\n";
+		}
+	}
+	print VCPROJFILE "\t</ItemGroup>\n";
+
+	#
+	# Dump headers to VCPROJ
+	#
+	print VCPROJFILE "\t<ItemGroup>";
+	foreach $file( @files ) {
+		if( $file && $file =~ /\.h/ ) {
+			if( File::Spec->file_name_is_absolute($file) ) {
+				$file = File::Spec->abs2rel($file);
+			}
+			$file =~ tr#/#\\#;
+			print VCPROJFILE "\t\t<ClInclude Include=\"$file\" />\n";
+		}
+	}
+	print VCPROJFILE "\t</ItemGroup>\n";
+ 
+    print VCPROJFILE <<ENDOFVCPROJ;
   <ItemGroup>
     <ResourceCompile Include="zlab.rc" />
   </ItemGroup>
@@ -3230,6 +3063,59 @@ sub win32_createMakefile_VC120 {
 ENDOFVCPROJ
 
 	close( VCPROJFILE );
+
+	#
+	# vs2013 (vc12) employs a separate "filters" file that controls the display of
+	# files in different subfolders in the project. 
+	#
+=TODO if we need this.
+
+	open( VCPROJFILTERS, ">$name.vcxproj.filters" ); 
+	print VCPROJFILTERS <<ENDOFVCPROJFILTERS;
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="zbslib">
+      <UniqueIdentifier>{763e0e62-65dc-424f-8fc4-4fd2e80ed51d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugins">
+      <UniqueIdentifier>{281e0e96-c7bb-454d-b86f-4c4f23a0ba66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="main">
+      <UniqueIdentifier>{1a3ad70b-8c2b-4834-821a-91090c979ebb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{508ba622-db92-4938-82bf-06d21c087c2b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+ENDOFVCPROJFILTERS
+
+	#
+	# zbslib
+	#
+	print VCPROJFILTERS "\t<ItemGroup>";
+	foreach $file( @files ) {
+		$filename = (File::Spec->splitpath( $file ))[2];
+		if( $file && $file =~ /zbslib/ ) {
+			if( File::Spec->file_name_is_absolute($file) ) {
+				$file = File::Spec->abs2rel($file);
+			}
+			print VCPROJFILTERS "\t\t<ClInclude Include=\"$file\" />\n";
+		}
+	}
+	print VCPROJFILTERS "\t</ItemGroup>";
+ 
+	# etc - other filter blocks here
+
+	print VCPROJFILTERS <<ENDOFVCPROJFILTERS;
+  <ItemGroup>
+    <ResourceCompile Include="zlab.rc" />
+  </ItemGroup>
+</Project>
+ENDOFVCPROJFILTERS
+
+=cut
+
 }
 
 sub linux_createMakefile {
@@ -4051,9 +3937,15 @@ sub macosx_runMakefile {
 
 sub win32_runMakefile {
 	my %hash = @_;
-	if( platformBuild64Bit() ) {
+	print "MS Compiler version $devVersion...\n";
+	if( $devVersion == 18 ) {
+		# visual studio 2013 is required to build 64bit windows zlab apps
 		my $clean = $hash{target} eq 'clean' ? "/t:clean" : "";
-		executeCmd( "msbuild $hash{win64name} $clean /p:Platform=x64 /p:Configuration=\"$hash{win32config}\"" );
+		my $platform = platformBuild64Bit() ? "x64" : "win32";
+		my $projname = platformBuild64Bit() ? $hash{win64name} : $hash{win64name};
+			# um, vs2013 was originally used to just build win64, but even if we're building
+			# a 32bit version, the name of the projectfile is the vcxproj format... 
+		executeCmd( "msbuild $projname $clean /p:Platform=$platform /p:Configuration=\"$hash{win32config}\"" );
 	}
 	else {
 		my $clean = $hash{target} eq 'clean' ? "/clean" : "";
