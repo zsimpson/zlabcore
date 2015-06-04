@@ -1476,7 +1476,6 @@ sub testCompiler {
 		# make it menu-selectable etc.  (tfb 2 june 2015)
 
 		my $build64bit = platformBuild64Bit();
-		print "Testing compiler on win32, 64bit build = $build64bit\n";
 
 		my @win64Dirs = ( "$ENV{ProgramFiles}/microsoft visual studio 12.0/vc/bin/amd64", "$ENV{ProgramFiles} (x86)/microsoft visual studio 12.0/vc/bin/amd64" );
 		if( $build64bit && ! findDirectory( @win64Dirs )  ) {
@@ -3937,7 +3936,6 @@ sub macosx_runMakefile {
 
 sub win32_runMakefile {
 	my %hash = @_;
-	print "MS Compiler version $devVersion...\n";
 	if( $devVersion == 18 ) {
 		# visual studio 2013 is required to build 64bit windows zlab apps
 		my $clean = $hash{target} eq 'clean' ? "/t:clean" : "";
