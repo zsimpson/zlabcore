@@ -1505,7 +1505,7 @@ sub testCompiler {
 		else {
 			my @sdkDirs = ( "$ENV{ProgramFiles}/Microsoft SDKs/Windows/v6.0a", "$ENV{ProgramFiles} (x86)/Microsoft SDKs/Windows/v6.0a" );
 			$winSdkDir = findDirectory( @sdkDirs );
-			$ENV{path} = "$devDir;$devDir/../vcpackages;$devDir/../../common7/ide;$winSdkDir/bin;/Program Files (x86)/CMake/bin;$winSdkDir/bin;" . $ENV{PATH};
+			$ENV{path} = "$devDir;$devDir/../vcpackages;$devDir/../../common7/ide;$winSdkDir/bin;/Program Files (x86)/CMake/bin;/Program Files/CMake/bin;$winSdkDir/bin;" . $ENV{PATH};
 		}
 
 		# TEST that the compiler is working and right version
