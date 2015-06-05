@@ -23,6 +23,9 @@ use File::Spec;
 #
 #############################################################
 
+# SAVE users path
+$userPath = $ENV{PATH};
+
 # SET Verbose for debug tracing
 $verbose = 0;
 
@@ -1487,7 +1490,7 @@ sub testCompiler {
 		#
 		my @dirs = ();
 		push @dirs, @win64Dirs if $build64bit;
-		push @dirs, ( "$ENV{ProgramFiles}/microsoft visual studio 9.0/vc/bin", "$ENV{ProgramFiles} (x86)/microsoft visual studio 9.0/vc/bin" );
+		push @dirs, ( "$ENV{ProgramFiles}/Microsoft Visual Studio 9.0/VC/bin", "$ENV{ProgramFiles} (x86)/Microsoft Visual Studio 9.0/VC/bin" );
 		push @dirs, @win64Dirs if !$build64bit;
 		#my @vc98dirs = ( "/dev/vc98/bin", "$ENV{ProgramFiles}/visual studio/vc98/bin", "./dev/vc98/bin", "../dev/vc98/bin", "../../dev/vc98/bin", "$ENV{ProgramFiles}/Microsoft Visual Studio/VC98/Bin" );
 			# I think we can ditch these by now?
@@ -1500,12 +1503,16 @@ sub testCompiler {
 			# to support vs2013 was to get support for building 64bit apps for windows, and almost all installs of win7 and later are 64bit.
 			my @sdkDirs = ( "$ENV{ProgramFiles}/Windows Kits/8.1", "$ENV{ProgramFiles} (x86)/Windows Kits/8.1" );
 			$winSdkDir = findDirectory( @sdkDirs );
-			$ENV{path} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin/x64;/Program Files (x86)/MSBuild/12.0/bin/amd64;" . $ENV{PATH};
+			$ENV{path} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin/x64;/Program Files (x86)/MSBuild/12.0/bin/amd64;" . $userPath;
 		}
 		else {
+			#
+			# WARNING: I have messed with the $ENV path below, and it is not working like I expect it to.  If I add explicit paths to where I know cl.exe is,
+			# it stil can't find the compiler, but if I include the $userPath, which contains the same strings, it does. TFB june 2015
+			#
 			my @sdkDirs = ( "$ENV{ProgramFiles}/Microsoft SDKs/Windows/v6.0a", "$ENV{ProgramFiles} (x86)/Microsoft SDKs/Windows/v6.0a" );
 			$winSdkDir = findDirectory( @sdkDirs );
-			$ENV{path} = "$devDir;$devDir/../vcpackages;$devDir/../../common7/ide;$winSdkDir/bin;/Program Files (x86)/CMake/bin;/Program Files/CMake/bin;$winSdkDir/bin;" . $ENV{PATH};
+			$ENV{PATH} = "$devDir;$devDir/../vcpackages;$devDir/../../common7/ide;$winSdkDir/bin;$winSdkDir/bin;" . $userPath;
 		}
 
 		# TEST that the compiler is working and right version
@@ -1517,7 +1524,7 @@ sub testCompiler {
 			$devVersion = $1;
 		}
 		else {
-			return "Unable to run cl or wrong version of MSDEV 6.0, vs2008, or vs2013";
+			return "Unable to run cl or wrong version of MSDEV 6.0, vs2008, or vs2013 (devVersion=$devVersion), ENV{PATH} is $ENV{'PATH'}";
 		}
 		unlink( "__cl__" );
 
