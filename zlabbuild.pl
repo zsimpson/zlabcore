@@ -79,7 +79,7 @@ sdkSetup();
 ####################################################################################################
 
 
-@configNames = ( 'none', 'clsb', 'kin_demo', 'kin_pro', 'kin_dev', 'kin_dev64', 'stopflow', 'stopflow_zfit', 'chakra' );
+@configNames = ( 'none', 'clsb', 'kin_demo', 'kin_demo64', 'kin_pro', 'kin_pro64', 'kin_dev', 'kin_dev64', 'stopflow', 'stopflow_zfit', 'chakra' );
 
 #
 # Config: Kin
@@ -131,15 +131,22 @@ sub config_kin_demo {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version 5.1.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMajor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Student';
+		$configPackageName = 'KinTek_Explorer_Student' . '_' . platformDescription();
 		$configPackageTo = "$configPackageName";
 		@configExtraMenu = @config_kin_extraMenu;
 	}
 	else {
 		kinDataCopy( $dstDir );
+	}
+}
+sub config_kin_demo64 {
+	my( $setup, $dstDir ) = @_;
+	config_kin_demo( $setup, $dstDir );
+	if( $setup ) {
+		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMajor.$svnRev. (64bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 	}
 }
 
@@ -153,7 +160,7 @@ sub config_kin_pro {
 		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Pro';
+		$configPackageName = 'KinTek_Explorer_Pro' . '_' . platformDescription();
 		$configPackageTo = "$configPackageName";
 		@configExtraMenu = @config_kin_extraMenu;
 	}
@@ -161,6 +168,14 @@ sub config_kin_pro {
 		kinDataCopy( $dstDir );
 	}
 }
+sub config_kin_pro64 {
+	my( $setup, $dstDir ) = @_;
+	config_kin_pro( $setup, $dstDir );
+	if( $setup ) {
+		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. (64bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+	}
+}
+
 
 sub config_kin_dev {
 	my( $setup, $dstDir ) = @_;
@@ -173,7 +188,7 @@ sub config_kin_dev {
 		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Dev';
+		$configPackageName = 'KinTek_Explorer_Dev' . '_' . platformDescription();
 		$configPackageTo = "$configPackageName";
 		@configExtraMenu = @config_kin_extraMenu;
 	}
@@ -181,24 +196,11 @@ sub config_kin_dev {
 		kinDataCopy( $dstDir );
 	}
 }
-
 sub config_kin_dev64 {
 	my( $setup, $dstDir ) = @_;
+	config_kin_dev( $setup, $dstDir );
 	if( $setup ) {
-		do( "$zlabDir/../plug_kintek/_kin/kinbuild.pl" ) || die "Unable to find _kin/kinbuild.pl";
-		$configInterface = 'gui';
-		@configPlugins = ( 'kin' );
-		@configDefines = ( 'KIN' );
-		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV64 Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
-		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
-		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Dev64';
-		$configPackageTo = "$configPackageName";
-		@configExtraMenu = @config_kin_extraMenu;
-	}
-	else {
-		kinDataCopy( $dstDir );
+		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. (64bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 	}
 }
 
@@ -387,7 +389,7 @@ while( 1 ) {
 	cls();
 
 	# TEST compiler for current configuration
-	my $build64bit = platformBuild64Bit();
+	my $platformDesc = platformDescription();
 	testCompiler( $platform );
 
 	# PRINT out the current configuration	
@@ -395,7 +397,7 @@ while( 1 ) {
 	print "----------------------------------------------------------------\n";
 	print "  Selected Config Name:\n";
 	print "    $configName\n";
-	print "  Platform: $platform (ver=$devVersion) (build64bit=$build64bit)\n";
+	print "  Platform: $platformDesc (ver=$devVersion)\n";
 	print "  Directories:\n";
 	print "    sdkDir   : $sdkDir\n";
 	print "    zbslibDir: $zbslibDir\n";
@@ -1322,7 +1324,9 @@ sub packageZlab() {
 
 	my $basePackageName = $configPackageName ? $configPackageName : "zlab";
 	if( $platform eq 'macosx' || $platform eq 'linux' ) {
-		my $packageName = $basePackageName . "_" . $platformDesc . ".tar.gz";
+		my $packageName = $basePackageName;
+		$packageName .= "_" . $platformDesc if !$packageName !~ /$platformDesc/;
+		$packageName .= ".tar.gz";
 		unlink( $packageName );
 		my $compressCmd = "tar -pczf $packageName $dstDir 2> /dev/null";
 		my( $volume, $directories, $file ) = File::Spec->splitpath( $dstDir );
@@ -1339,7 +1343,9 @@ sub packageZlab() {
 		}
 	}
 	if( $platform eq 'win32' ) {
-		my $packageName = $basePackageName . "_" . $platformDesc . ".zip";
+		my $packageName = $basePackageName;
+		$packageName .= "_" . $platformDesc if $packageName !~ /$platformDesc/;
+		$packageName .= ".zip";
 		unlink( $packageName );
 		my $compressCmd = "$zlabDir/tools/zip.exe -rq $packageName $dstDir"; 
 		`$compressCmd`;
@@ -1417,7 +1423,7 @@ sub platformBuild64Bit {
 	if( $platform eq 'win32' ) {
 		$build64bit = 0;
 			# almost always build 32bit on windows
-		if( $configName eq 'kin_dev64' ) {
+		if( $configName eq 'kin_dev64' || $configName eq 'kin_demo64' || $configName eq 'kin_pro64' ) {
 			$build64bit = 1;
 				# experimental
 		}
@@ -1445,7 +1451,7 @@ sub platformDescription {
 	my $s;
 
 	if( $platform eq 'win32' ) {
-		$s .= "win32";
+		$s = platformBuild64Bit() ? "win64" : "win32";
 	}
 
 	if( $platform eq 'linux' ) {
