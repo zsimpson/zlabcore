@@ -79,7 +79,7 @@ sdkSetup();
 ####################################################################################################
 
 
-@configNames = ( 'none', 'clsb', 'kin_demo', 'kin_demo64', 'kin_pro', 'kin_pro64', 'kin_dev', 'kin_dev64', 'stopflow', 'stopflow_zfit', 'chakra' );
+@configNames = ( 'none', 'clsb', 'kin_demo', 'kin_demo32', 'kin_pro', 'kin_pro32', 'kin_dev', 'kin_dev32', 'stopflow', 'stopflow_zfit', 'chakra' );
 
 #
 # Config: Kin
@@ -134,7 +134,7 @@ sub config_kin_demo {
 		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMajor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Student' . '_' . platformDescription();
+		$configPackageName = 'KinTek_Explorer_Student';
 		$configPackageTo = "$configPackageName";
 		@configExtraMenu = @config_kin_extraMenu;
 	}
@@ -142,11 +142,12 @@ sub config_kin_demo {
 		kinDataCopy( $dstDir );
 	}
 }
-sub config_kin_demo64 {
+sub config_kin_demo32 {
 	my( $setup, $dstDir ) = @_;
 	config_kin_demo( $setup, $dstDir );
 	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMajor.$svnRev. (64bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMajor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		$configPackageTo .= '_' . platformDescription();
 	}
 }
 
@@ -160,7 +161,7 @@ sub config_kin_pro {
 		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Pro' . '_' . platformDescription();
+		$configPackageName = 'KinTek_Explorer_Pro';
 		$configPackageTo = "$configPackageName";
 		@configExtraMenu = @config_kin_extraMenu;
 	}
@@ -168,11 +169,12 @@ sub config_kin_pro {
 		kinDataCopy( $dstDir );
 	}
 }
-sub config_kin_pro64 {
+sub config_kin_pro32 {
 	my( $setup, $dstDir ) = @_;
 	config_kin_pro( $setup, $dstDir );
 	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. (64bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		$configPackageTo .= '_' . platformDescription();
 	}
 }
 
@@ -188,7 +190,7 @@ sub config_kin_dev {
 		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Dev' . '_' . platformDescription();
+		$configPackageName = 'KinTek_Explorer_Dev';
 		$configPackageTo = "$configPackageName";
 		@configExtraMenu = @config_kin_extraMenu;
 	}
@@ -196,11 +198,12 @@ sub config_kin_dev {
 		kinDataCopy( $dstDir );
 	}
 }
-sub config_kin_dev64 {
+sub config_kin_dev32 {
 	my( $setup, $dstDir ) = @_;
 	config_kin_dev( $setup, $dstDir );
 	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. (64bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		$configPackageTo .= '_' . platformDescription();
 	}
 }
 
@@ -1423,9 +1426,9 @@ sub platformBuild64Bit {
 	if( $platform eq 'win32' ) {
 		$build64bit = 0;
 			# almost always build 32bit on windows
-		if( $configName eq 'kin_dev64' || $configName eq 'kin_demo64' || $configName eq 'kin_pro64' ) {
+		if( $configName eq 'kin_dev' || $configName eq 'kin_demo' || $configName eq 'kin_pro' ) {
 			$build64bit = 1;
-				# experimental
+				# experimental, starting to ship to users june 2015 (kintek)
 		}
 	}
 
@@ -1461,13 +1464,6 @@ sub platformDescription {
 
 	if( $platform eq 'macosx' ) {
 		$s .= "macosx";
-		my $proc = `uname -p 2> nul`;
-		if( $proc =~ /powerpc/i ) {
-			$s .= "_ppc";
-		}
-		else {
-			$s .= "_intel";
-		}
 	}
 
 	return $s;
@@ -2071,8 +2067,6 @@ sub macosx_compile {
 
 	my $debug = $options{debugsymbols} ? '-g' : '';
 
-	#return executeCmd( "g++ -m32 -c -fpermissive -Wno-write-strings -Wno-non-template-friend -mmacosx-version-min=10.4 @includes $file -o $outfile" );
-		# note that we force 32bit until we find a 64bit fix or replacement for GLFW (tfb)
 	return executeCmd( "g++ -c -fpermissive -Wno-write-strings -Wno-non-template-friend -mmacosx-version-min=10.5 @includes $file -o $outfile" );
 }
 
@@ -2096,8 +2090,6 @@ sub macosx_link {
 	map{ $_ = "\"$_\" " } @files;
 	$outfile = "\"$outfile\"";
 
-	#my $ret = executeCmd( "glibtool --mode=link g++ -m32 -mmacosx-version-min=10.4 @libs @files -o $outfile $extralink" );
-		# note that we force 32bit until we find a 64bit fix or replacement for GLFW (tfb)
 	my $ret = executeCmd( "glibtool $libtoolflags --mode=link g++ -mmacosx-version-min=10.5 @libs @files -o $outfile $extralink" );
 	if( $outfile =~ /\"(.*)\.exe\"/ ) {
 		# libtool refuses to create a exe file, it must be renamed if that's what you ask for
@@ -3209,32 +3201,17 @@ sub linux_createMakefile {
 sub macosx_createMakefile {
 	my %hash = @_;
 	
-	my $is64Bit = platformBuild64Bit();
-	my $minVersion = "10.4";
-	my $windowLib  = "Carbon";
 	my $optimize = "-O3";
 	my $compiler = 'g++';
-	if( $is64Bit ) {
-		$minVersion = "10.5";
-		$windowLib  = "Cocoa";
-		# On 64bit osx, for some native Cocoa-based functionality we must use objective-C - since this
-		# is the only module and only applies to 64bit osx, it seemed simplest to just make that replacement
-		# here.  It is noted in the ZBS module record for filedialog_native.cpp
-		my $files = join( ':', @{$hash{files}} );
-		$files =~ s/filedialog_native.cpp/filedialog_native.mm/g;
-		@{$hash{files}} = split( /:/, $files );
+	my $minVersion = "10.5";
+	my $windowLib  = "Cocoa";
 
-		# There is a bug in the darwin11/g++ that in which the compiler generates a seg fault when optimization
-		# is turned all the way up for kineticbase.cpp.  So on Lion, I turn it down to -O1 until this is resolved.
-		# I was also trying clang++ ... but what I ended up doing, obviating the need for either of these, is
-		# commenting out the code in kineticbase.cpp since it is not used by the shipping version of kinexp.
-		# See Lion comment in that code.
-		$gver = `g++ --version`;
-		if( $gver =~ /darwin11/ ) {
-			#$optimize = '-O1';
-			#$compiler = 'clang++';
-		}
-	}
+	# On 64bit osx, for some native Cocoa-based functionality we must use objective-C - since this
+	# is the only module and only applies to 64bit osx, it seemed simplest to just make that replacement
+	# here.  It is noted in the ZBS module record for filedialog_native.cpp
+	my $files = join( ':', @{$hash{files}} );
+	$files =~ s/filedialog_native.cpp/filedialog_native.mm/g;
+	@{$hash{files}} = split( /:/, $files );
 
 	open( MAKEFILE, ">Makefile" );
 	print MAKEFILE "PROGRAM = $hash{name}App\n";
@@ -3260,7 +3237,6 @@ sub macosx_createMakefile {
 		}
 		print MAKEFILE "  -D $_ \\\n";
 	}
-#	map{ print MAKEFILE "  -D $_ \\\n" } uniquify( @{$hash{macosxdefines}} );
 	print MAKEFILE "\n";
 	print MAKEFILE "OBJS1 = \$(SRC_FILES)\n";
 	print MAKEFILE "OBJS2 = \$(subst .cpp,.o,\$(OBJS1))\n";
@@ -3275,12 +3251,10 @@ sub macosx_createMakefile {
 	print MAKEFILE "\n";
 	print MAKEFILE "all: \$(PROGRAM)\n";
 	print MAKEFILE "\n";
-	if( $is64Bit ) {
-		print MAKEFILE "\%.o : \%.mm\n";
-		print MAKEFILE "\t\@echo \$<\n";
-		print MAKEFILE "\t\@\$(CC) \$(CFLAGS) -c \$< -o \$@\n";
-		print MAKEFILE "\n";
-	}
+	print MAKEFILE "\%.o : \%.mm\n";
+	print MAKEFILE "\t\@echo \$<\n";
+	print MAKEFILE "\t\@\$(CC) \$(CFLAGS) -c \$< -o \$@\n";
+	print MAKEFILE "\n";
 	print MAKEFILE "\%.o : \%.cpp\n";
 	print MAKEFILE "\t\@echo \$<\n";
 	print MAKEFILE "\t\@\$(CC) \$(CFLAGS) -fpermissive -Wno-non-template-friend -c \$< -o \$@\n";
@@ -3302,12 +3276,9 @@ sub macosx_createMakefile {
 	}
 	print MAKEFILE "\$(PROGRAM): \$(OBJS)\n";
 	print MAKEFILE "\t\@\$(CC) \$(CFLAGS) \$^ \$(LIBS) -framework AGL -framework OpenGL -framework $windowLib -framework IOKit -framework CoreFoundation -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreMIDI -o \$(PROGRAM)\n";
-	#IOKit and CoreFoundation frameworks were added to support static linking to the Secutech usbkey library.
-#	print MAKEFILE "\t\@mkdir -p zlab.app\n";
-#	print MAKEFILE "\t\@mkdir -p zlab.app/Contents\n";
+		#IOKit and CoreFoundation frameworks were added to support static linking to the Secutech usbkey library.
 	print MAKEFILE "\t\@mkdir -p zlab.app/Contents/Resources\n";
 	print MAKEFILE "\t\@mkdir -p zlab.app/Contents/MacOS\n";
-#print MAKEFILE "\t\@mkdir -p zlab.app/Contents/MacOS/libs\n";
 	print MAKEFILE "\t\@" . 'echo \<\?xml version=\"1.0\" encoding=\"UTF-8\"\?\> > zlab.app/Contents/Info.plist' . "\n";
 	print MAKEFILE "\t\@" . 'echo \<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"\> >> zlab.app/Contents/Info.plist' . "\n"; 
 	print MAKEFILE "\t\@" . 'echo \<plist version=\"1.0\"\> >> zlab.app/Contents/Info.plist' . "\n";;
@@ -3335,14 +3306,6 @@ sub macosx_createMakefile {
 	print MAKEFILE "\t\@" . 'echo \</plist\> >> zlab.app/Contents/Info.plist' . "\n";
 	print MAKEFILE "\t\@cp $hash{name}App zlab.app/Contents/MacOS/$hash{name}\n";
 	print MAKEFILE "\t\@rm -f $hash{name}App\n";
-#	print MAKEFILE "\t\@cp .libs/$hash{name}App zlab.app/Contents/MacOS/$hash{name}\n";
-		# this is the actual executable
-#	print MAKEFILE "\t\@sed '" . 's/$thisdir\/\.libs/$thisdir/' . "' zlab.app/Contents/MacOS/$hash{name}LT > zlab.app/Contents/MacOS/$hash{name}LT1\n";
-#	print MAKEFILE "\t\@sed '" . 's/DYLD_LIBRARY_PATH=\".*\"/DYLD_LIBRARY_PATH=\"$$progdir\/libs:$$DYLD_LIBRARY_PATH\"/' . "' zlab.app/Contents/MacOS/$hash{name}LT1 > zlab.app/Contents/MacOS/$hash{name}LT2\n";
-#	print MAKEFILE "\t\@sed '" . 's/exec $$progdir\/$$program/exec \"$$progdir\/$$program\"/' . "' zlab.app/Contents/MacOS/$hash{name}LT2 > zlab.app/Contents/MacOS/$hash{name}LT3\n";
-#	print MAKEFILE "\t\@sed '" . "s/$hash{name}App/$hash{name}/" . "' zlab.app/Contents/MacOS/$hash{name}LT3 > zlab.app/Contents/MacOS/$hash{name}LT4\n";
-#	print MAKEFILE "\t\@cp zlab.app/Contents/MacOS/$hash{name}LT4 zlab.app/Contents/MacOS/$hash{name}LT\n";
-#	print MAKEFILE "\t\@rm zlab.app/Contents/MacOS/$hash{name}LT1 zlab.app/Contents/MacOS/$hash{name}LT2 zlab.app/Contents/MacOS/$hash{name}LT3 zlab.app/Contents/MacOS/$hash{name}LT4\n";
 	print MAKEFILE "\t\@echo ==============================================\n";
 	print MAKEFILE "\t\@echo ================= SUCCESS ====================\n";
 	print MAKEFILE "\t\@echo ============= To run: open zlab.app ==========\n";
