@@ -878,13 +878,15 @@ sub analyzeUsedFiles {
 	# of KinTek with the old glfw library.  Note that other zlab apps on win32 will continue to
 	# use 2.7.2, so hopefully we'll run into this on a machine we can debug on and solve this 
 	# problem correctly.  TFB 10 June 2012
+	# 5.21.15 - we removed this.
+	# 6.23.15 - I am reinstating this for 32bit builds of kintek software only.
 	#
-#	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 && $platform eq 'win32' ) {
-#		delete $usedSDKs{'glfw-2.7.2'};
-#		$usedSDKs{'glfw'}++;
-#		print "\n  *** WARNING: using older glfw library on $platform for KinTek application!\n";
-#	}
-# removing this 05.21.15 per Ken; remove this commented code at year end.  May go back to it. (tfb)
+	my $platformDesc = platformDescription();
+	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 && $platform eq 'win32' ) {
+		delete $usedSDKs{'glfw-2.7.2'};
+		$usedSDKs{'glfw'}++;
+		print "\n  *** WARNING: using older glfw library on $platformDesc for 32bit KinTek application!\n";
+	}
 
 	@configUsedSDKs = sort( keys %usedSDKs );
 		# TFB added sort because I need clapack to get built before levmar.
