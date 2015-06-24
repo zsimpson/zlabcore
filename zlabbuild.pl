@@ -882,10 +882,10 @@ sub analyzeUsedFiles {
 	# 6.23.15 - I am reinstating this for 32bit builds of kintek software only.
 	#
 	my $platformDesc = platformDescription();
-	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 && $platform eq 'win32' ) {
+	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 && $platformDesc eq 'win32' ) {
 		delete $usedSDKs{'glfw-2.7.2'};
 		$usedSDKs{'glfw'}++;
-		print "\n  *** WARNING: using older glfw library on $platformDesc for 32bit KinTek application!\n";
+		print "\n  *** Using older glfw library on $platformDesc for 32bit KinTek application.\n";
 	}
 
 	@configUsedSDKs = sort( keys %usedSDKs );
