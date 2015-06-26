@@ -1911,6 +1911,7 @@ sub radioMenu {
 	my %list = @_;
 
 	my @sorted = sort keys %list;
+	my @keyFromNum;
 
 	while( 1 ) {
 		printf( "   0) Exit Menu\n" );
@@ -1938,6 +1939,7 @@ sub checkMenu {
 	my %list = @_;
 
 	my @sorted = sort keys %list;
+	my @keyFromNum;
 
 	while( 1 ) {
 		printf( "   0) Exit Menu\n" );
