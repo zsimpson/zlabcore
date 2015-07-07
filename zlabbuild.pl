@@ -131,7 +131,7 @@ sub config_kin_demo {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMajor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Student';
@@ -146,7 +146,7 @@ sub config_kin_demo32 {
 	my( $setup, $dstDir ) = @_;
 	config_kin_demo( $setup, $dstDir );
 	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMajor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configPackageTo .= '_' . platformDescription();
 	}
 }
