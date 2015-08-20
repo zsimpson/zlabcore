@@ -78,8 +78,12 @@ sdkSetup();
 #
 ####################################################################################################
 
-
 @configNames = ( 'none', 'clsb', 'kin_demo', 'kin_demo32', 'kin_pro', 'kin_pro32', 'kin_dev', 'kin_dev32', 'stopflow', 'stopflow_zfit', 'chakra' );
+if( $platform ne 'win32' ) {
+	# On non-windows platforms, don't present the 32bit configs, as these are windows-only.
+	@configNames = ( 'none', 'clsb', 'kin_demo', 'kin_pro', 'kin_dev', 'stopflow', 'stopflow_zfit', 'chakra' );
+}
+
 
 #
 # Config: Kin
