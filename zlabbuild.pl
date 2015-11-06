@@ -89,7 +89,7 @@ if( $platform ne 'win32' ) {
 # Config: Kin
 #
 $kinVersionMajor = 5;
-$kinVersionMinor = 1;
+$kinVersionMinor = 2;
 @config_kin_extraMenu = (
 	"   kin: Add a hardware key to kinusbkeys (resets key memory)" => sub {
 		print "Connect the SecuTech key and press ENTER\n";
