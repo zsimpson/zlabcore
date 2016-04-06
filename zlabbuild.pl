@@ -1391,6 +1391,9 @@ sub svnRevision( $ ) {
 		if( $mon < 10 ) {
 			$mon = "0$mon";
 		}
+		if( $mday < 10 ) {
+			$mday = "0$mday"
+		}
 		$rev = "$year$mon$mday";
 	}
 	return $rev;
