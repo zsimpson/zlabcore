@@ -218,6 +218,11 @@ sub options_kin {
 	# @TODO? It would be nicer for these options to live in a file under _kin somewhere
 	# and get copied.
 	my ($file) = @_;
+	print $file "Kin_modelPath = \"./models/*.mec\"\n";
+	print $file "Kin_rawdataPath = \"./rawData/*.txt\"\n";
+	print $file "Kin_outputFitPath = \"./output/*.fit\"\n";
+	print $file "Kin_outputSimPath = \"./output/*.sim.txt\"\n";
+	print $file "Kin_outputDataPath = \"./output/*.repo.txt\"\n";
 	print $file "exportSim_fontserif_default = 0\n";
 	print $file "exportSim_font_size_default = 12\n";
 	print $file "exportSim_linewidth_default = 2\n";
