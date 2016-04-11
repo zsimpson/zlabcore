@@ -211,6 +211,19 @@ sub config_kin_dev32 {
 	}
 }
 
+sub options_kin {
+	# Prints program configuration options specific to _kin to the options.cfg file
+	# which ships with the software.
+	#
+	# @TODO? It would be nicer for these options to live in a file under _kin somewhere
+	# and get copied.
+	my ($file) = @_;
+	print $file "exportSim_fontserif_default = 0\n";
+	print $file "exportSim_font_size_default = 12\n";
+	print $file "exportSim_linewidth_default = 2\n";
+	print $file "exportSim_marker_size_default = 2\n";
+}
+
 #
 # Config: CLSB (MOIL)
 #
@@ -1112,6 +1125,11 @@ sub createMakeFileAndOptionallyBuild {
 		my $pluginPath = "pluginPath_" . $_ . ' = "' . $configPluginPaths{"_$_"} . '"' . "\n";
 		print "ADDING: " . $pluginPath . "\n" if( $verbose );
 		print OPTIONS $pluginPath;
+		# print plugin-specific options if defined
+		if( defined &{'options_' . $_} ) {
+			&{'options_' . $_}( OPTIONS );
+		}
+
 	}
 	close OPTIONS;
 
@@ -1273,6 +1291,11 @@ sub packageZlab() {
 			$pluginPathAssignment = "pluginPath_" . $_ . ' = "' . "./_$_" . '"' . "\n";
 			print $pluginPathAssignment if( $verbose );
 			print F $pluginPathAssignment;
+			# print plugin-specific options if defined
+			if( defined &{'options_' . $_} ) {
+				&{'options_' . $_}( F );
+			}
+
 		}
 
 		close( F );
