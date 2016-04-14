@@ -224,7 +224,7 @@ sub options_kin {
 	print $file "Kin_outputSimPath = \"./output/*.sim.txt\"\n";
 	print $file "Kin_outputDataPath = \"./output/*.repo.txt\"\n";
 	print $file "exportSim_fontserif_default = 0\n";
-	print $file "exportSim_font_size_default = 12\n";
+	print $file "exportSim_font_size_default = 11\n";
 	print $file "exportSim_linewidth_default = 2\n";
 	print $file "exportSim_marker_size_default = 2\n";
 }
