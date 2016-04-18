@@ -226,7 +226,9 @@ sub options_kin {
 	print $file "exportSim_fontserif_default = 0\n";
 	print $file "exportSim_font_size_default = 11\n";
 	print $file "exportSim_linewidth_default = 2\n";
+	print $file "exportSim_line_brightness_default = 1\n";
 	print $file "exportSim_marker_size_default = 2\n";
+	print $file "exportSim_data_lines_default = 0\n";
 }
 
 #
