@@ -88,8 +88,8 @@ if( $platform ne 'win32' ) {
 #
 # Config: Kin
 #
-$kinVersionMajor = 5;
-$kinVersionMinor = 2;
+$kinVersionMajor = 6;
+$kinVersionMinor = 0;
 @config_kin_extraMenu = (
 	"   kin: Add a hardware key to kinusbkeys (resets key memory)" => sub {
 		print "Connect the SecuTech key and press ENTER\n";
@@ -226,7 +226,7 @@ sub options_kin {
 	print $file "exportSim_fontserif_default = 0\n";
 	print $file "exportSim_font_size_default = 11\n";
 	print $file "exportSim_linewidth_default = 2\n";
-	print $file "exportSim_line_brightness_default = 1\n";
+	print $file "exportSim_line_brightness_default = .7\n";
 	print $file "exportSim_marker_size_default = 2\n";
 	print $file "exportSim_data_lines_default = 0\n";
 }
