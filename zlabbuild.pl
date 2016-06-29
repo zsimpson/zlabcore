@@ -220,9 +220,9 @@ sub options_kin {
 	my ($file) = @_;
 	print $file "Kin_modelPath = \"./models/*.mec\"\n";
 	print $file "Kin_rawdataPath = \"./rawData/*.txt\"\n";
-	print $file "Kin_outputFitPath = \"./output/*.fit\"\n";
-	print $file "Kin_outputSimPath = \"./output/*.sim.txt\"\n";
-	print $file "Kin_outputDataPath = \"./output/*.repo.txt\"\n";
+	print $file "Kin_outputFitPath = \"./output/*.txt\"\n";
+	print $file "Kin_outputSimPath = \"./output/*.txt\"\n";
+	print $file "Kin_outputDataPath = \"./output/*.txt\"\n";
 	print $file "fitspaceSolid = 1\n";
 	print $file "exportSim_fontserif_default = 0\n";
 	print $file "exportSim_font_size_default = 11\n";
