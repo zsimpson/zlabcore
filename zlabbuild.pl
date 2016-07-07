@@ -135,7 +135,7 @@ sub config_kin_demo {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEMO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Student';
@@ -150,7 +150,7 @@ sub config_kin_demo32 {
 	my( $setup, $dstDir ) = @_;
 	config_kin_demo( $setup, $dstDir );
 	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_DEMO', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEMO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configPackageTo .= '_' . platformDescription();
 	}
 }
@@ -162,7 +162,7 @@ sub config_kin_pro {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Pro';
@@ -177,7 +177,7 @@ sub config_kin_pro32 {
 	my( $setup, $dstDir ) = @_;
 	config_kin_pro( $setup, $dstDir );
 	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_PRO', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configPackageTo .= '_' . platformDescription();
 	}
 }
@@ -188,7 +188,7 @@ sub config_kin_dev {
 	if( $setup ) {
 		do( "$zlabDir/../plug_kintek/_kin/kinbuild.pl" ) || die "Unable to find _kin/kinbuild.pl";
 		$configInterface = 'gui';
-		@configPlugins = ( 'kin' );
+		@configPlugins = ( 'kin', 'kingsl' );
 		@configDefines = ( 'KIN' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
 		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
@@ -407,6 +407,10 @@ if( $ARGV[0] ) {
 
 cls();
 configLoad();
+if( defined &{'config_' . $configName} ) {
+	# RUN the config setup if there is one
+	&{'config_' . $configName}( 1 );
+}
 print "Analyzing files...\n";
 pushCwd( $buildDir );
 analyzeUsedFiles();
@@ -895,24 +899,31 @@ sub analyzeUsedFiles {
 			push( @configPluginDirSpec, "$module&$subdir" );
 		}
 	}
-
 	
 	#
-	# Kintek HACK -- TFB upgraded the glfw version used by all of zlab, but there is some issue on
-	# some windows machines in which glfw-2.7.2 fails the glfwOpenWindow call in main.cpp.  Since 
-	# we don't have a machine we are able to reproduce this on, we are going to build win32 versions
-	# of KinTek with the old glfw library.  Note that other zlab apps on win32 will continue to
-	# use 2.7.2, so hopefully we'll run into this on a machine we can debug on and solve this 
-	# problem correctly.  TFB 10 June 2012
-	# 5.21.15 - we removed this.
-	# 6.23.15 - I am reinstating this for 32bit builds of kintek software only.
+	# Kintek HACKS: 
 	#
 	my $platformDesc = platformDescription();
-	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 && $platformDesc eq 'win32' ) {
-		delete $usedSDKs{'glfw-2.7.2'};
-		$usedSDKs{'glfw'}++;
-		print "\n  *** Using older glfw library on $platformDesc for 32bit KinTek application.\n";
+	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 ) {
+		if( index( $configName, "kin_dev" ) == -1 ) {
+			# Only link to GSL in the DEV builds - GSL is GPL software which we do not ship.
+			# delete $usedSDKs{'gsl-1.8'};
+		}
+		if( $platformDesc eq 'win32' ) {
+			# TFB upgraded the glfw version used by all of zlab, but there is some issue on
+			# some windows machines in which glfw-2.7.2 fails the glfwOpenWindow call in main.cpp.  Since 
+			# we don't have a machine we are able to reproduce this on, we are going to build win32 versions
+			# of KinTek with the old glfw library.  Note that other zlab apps on win32 will continue to
+			# use 2.7.2, so hopefully we'll run into this on a machine we can debug on and solve this 
+			# problem correctly.  TFB 10 June 2012
+			# 5.21.15 - we removed this.
+			# 6.23.15 - I am reinstating this for 32bit builds of kintek software only.
+			delete $usedSDKs{'glfw-2.7.2'};
+			$usedSDKs{'glfw'}++;
+			print "\n  *** Using older glfw library on $platformDesc for 32bit KinTek application.\n";
+		}
 	}
+
 
 	@configUsedSDKs = sort( keys %usedSDKs );
 		# TFB added sort because I need clapack to get built before levmar.
@@ -993,6 +1004,25 @@ sub extraDefines( $ ) {
 	return 0;
 }
 
+sub configDefined( $ ) {
+	# Analagous to the above, but for the @configDefines array that is populated
+	# by any special config setups for named configs, and then also receives
+	# the EXTRA_DEFINES based on the plugin(s)
+	my $arg = shift;
+	
+	print "Looking for $arg defined in \@configDefines...\n" if $verbose;
+	
+	foreach my $configDefine( @configDefines ) {
+		print( "  found $configDefine\n" ) if $verbose;
+		if( $configDefine eq $arg )  {
+			print( "    found $arg, returning 1\n" ) if $verbose;
+			return 1;
+		}
+	}
+	return 0;
+
+}
+
 sub zbsModuleScanDirectDepends {
 	# Given a file figure out all the other files
 	# that it depends on.  This is done by analyzing
@@ -1015,7 +1045,12 @@ sub zbsModuleScanDirectDepends {
 		if( /^\/\/\s*\@ZBSIF\s+(.*)/ ) {
 			# A header include option has been found. Read the line and evaluate it, if true include the contents otherwise skip
 			if( ! eval($1) ) {
+				print "Skipping section because $1 evals to false\n" if $verbose;
 				$skipping = 1;
+			}
+			else {
+				print "Including section because $1 evals to true\n" if $verbose;
+
 			}
 		}
 		elsif( /^\/\/\s*\@ZBSENDIF/ ) {
