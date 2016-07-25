@@ -37,6 +37,7 @@ my $svnRev = svnRevision();
 
 # FIND the critical folders, @TODO create them if not found
 $sdkDir    = findDirectory( qw^../sdkpub^ );
+$sdkPrvDir = findDirectory( qw^../sdkprv^ );
 $zbslibDir = findDirectory( qw^../zbslib^ );
 $zlabDir   = findDirectory( qw^../zlabcore^ );
 
