@@ -3801,6 +3801,7 @@ ENDOFPBXPROJ
 	print PBXPROJ <<BUILDCFG;
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LIBRARY = "libstdc++";
 				COPY_PHASE_STRIP = NO;
 				GCC_REUSE_STRINGS = NO;
 				$archSettings
@@ -3814,6 +3815,7 @@ BUILDCFG
 	print PBXPROJ <<BUILDCFG;
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LIBRARY = "libstdc++";
 				COPY_PHASE_STRIP = YES;
 				GCC_REUSE_STRINGS = NO;
 				$archSettings
@@ -3828,6 +3830,7 @@ BUILDCFG
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LIBRARY = "libstdc++";
 				COPY_PHASE_STRIP = NO;
 				GCC_REUSE_STRINGS = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3888,6 +3891,7 @@ BUILDCFG
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				GCC_REUSE_STRINGS = NO;
+				CLANG_CXX_LIBRARY = "libstdc++";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
