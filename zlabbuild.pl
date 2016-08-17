@@ -906,10 +906,6 @@ sub analyzeUsedFiles {
 	#
 	my $platformDesc = platformDescription();
 	if( $configPlugins[0] eq 'kin' && scalar(@configPlugins)==1 ) {
-		if( index( $configName, "kin_dev" ) == -1 ) {
-			# Only link to GSL in the DEV builds - GSL is GPL software which we do not ship.
-			# delete $usedSDKs{'gsl-1.8'};
-		}
 		if( $platformDesc eq 'win32' ) {
 			# TFB upgraded the glfw version used by all of zlab, but there is some issue on
 			# some windows machines in which glfw-2.7.2 fails the glfwOpenWindow call in main.cpp.  Since 
