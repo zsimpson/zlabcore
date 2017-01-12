@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 use File::Spec;
+use File::Copy 'move';
+use File::Path 'rmtree';
 
 # MAC: You need to have X11 SDk installed and the gcc etc.
 # The gcc is installed from Finder--HD--Applications--Installers--XCode tools--Developer.mpkg
@@ -1421,6 +1423,54 @@ sub packageZlab() {
 		else {
 			printf "Create distribution $packageName failed. ( $compressCmd )\n";
 		}
+	}
+	if( $platform eq 'macosx' && index($basePackageName,'KinTek') != -1 ) {
+		# Because OSX 10.12 (Sierra) requires that we start code-signing the package
+		# to avoid Gatekeeper path randomization (which prevents us from loading path-relative
+		# files), we need to now package as a disk-image on OSX, and then code-sign 
+		# the disk-image.  We also need to code-sign the app itself.  This is for KinTek
+		# only, and we use the ID the refs the KinTek Deverloper ID cert to sign with.
+
+		print "Creating DMG and code-signing for OSX...\n";
+		
+		my $packageName = $basePackageName;
+		$packageName .= ".dmg";
+		unlink( $packageName );
+
+		#
+		# codesign the actual app; that id/cert must exist on the machine for the KinTek Developer ID
+		#
+		my $codesignAppCmd = "find $dstDir -name '*.app' | xargs codesign --deep --force --sign '8Y42SX3ZP3'";
+		`$codesignAppCmd`;
+
+
+		# hdiutil will copy everything inside the dstDir, but we need the enclosing folder
+		# as well to make installation easier via the app.  So put all the dstDir inside
+		# yet another folder called "dmg"
+		$dmgDir = "dmg";
+		rmtree( $dmgDir );
+		mkdir( $dmgDir );
+		move( $dstDir, $dmgDir . "/" . $dstDir );
+
+		my $compressCmd = "hdiutil create $packageName -volname '$basePackageName' -srcFolder $dmgDir -format UDBZ";
+		# my( $volume, $directories, $file ) = File::Spec->splitpath( $dstDir );
+		# if( $directories ne "" && $file ne "" ) {
+		# 	# I don't think this is an issue for hdiutil
+		# }
+		`$compressCmd`;
+		if (-s "$packageName") {
+			printf "Distribution created: $packageName ( $compressCmd )\n";
+		}
+		else {
+			printf "Create distribution $packageName failed. ( $compressCmd )\n";
+		}
+
+		#
+		# Now we also have to codesign the entire DMG, since other resources exist outside
+		# of the .app itself.
+		#
+		my $codesignDmgCmd = "codesign --deep --force --sign '8Y42SX3ZP3' $packageName";
+		`$codesignDmgCmd`;
 	}
 	if( $platform eq 'win32' ) {
 		my $packageName = $basePackageName;
