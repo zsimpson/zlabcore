@@ -92,7 +92,7 @@ if( $platform ne 'win32' ) {
 # Config: Kin
 #
 $kinVersionMajor = 6;
-$kinVersionMinor = 0;
+$kinVersionMinor = 1;
 @config_kin_extraMenu = (
 	"   kin: Add a hardware key to kinusbkeys (resets key memory)" => sub {
 		print "Connect the SecuTech key and press ENTER\n";
@@ -1233,6 +1233,117 @@ sub createMakeFileAndOptionallyBuild {
 	#return status of build, if we tried to build
 }
 
+sub createSignedDmg {
+	my $dstDir = shift;
+	my $basePackageName = shift;
+	my $signature = shift;
+
+	print "Creating DMG and code-signing for OSX...\n";
+	
+	my $packageName = $basePackageName;
+	$packageName .= ".dmg";
+	unlink( $packageName );
+
+	#
+	# codesign the actual app; that id/cert must exist on the machine for the KinTek Developer ID
+	#
+	my $codesignAppCmd = "find $dstDir -name '*.app' | xargs codesign --deep --force --sign $signature";
+	`$codesignAppCmd`;
+
+
+	# hdiutil will copy everything inside the dstDir, but we need the enclosing folder
+	# as well to make installation easier via the app.  So put all the dstDir inside
+	# yet another folder called "dmg"
+	$dmgDir = "dmg";
+	rmtree( $dmgDir );
+	mkdir( $dmgDir );
+	move( $dstDir, $dmgDir . "/" . $dstDir );
+
+	#
+	# put a link to the applications folder inside of the dmg, for user to drag the app to.
+	#
+	symlink( "/Applications", "$dmgDir/Applications" );
+
+	#
+	# and create the disk image.
+	#
+	my $compressCmd = "hdiutil create $packageName -volname '$basePackageName' -srcFolder $dmgDir -format UDRW";
+	`$compressCmd`;
+
+	#
+	# mount the disk so that we can set various view options
+	#
+	my $cmd = "hdiutil attach -readwrite -noverify '$packageName' | egrep '^/dev/' | sed 1q | awk '{print \$1}'";
+	my $device = `$cmd`;
+
+	#
+	# if there is a background image, copy it into place.  The following finds the FIRST
+	# file named background.png in the package and uses it.
+	#
+	mkdir( "/Volumes/$basePackageName/.background" );
+	my $moveBackgroundCmd = "find $dmgDir/$dstDir -name 'background.png' -exec cp {} /Volumes/$basePackageName/.background \\; -quit";
+	`$moveBackgroundCmd`;
+
+	#
+	# if we have a background, run some "apple script" to configure the styling of the folder
+	# when the user mounts the diskimage and looks at it.
+	# 
+	my $script = <<OSASCRIPT;
+tell application "Finder"
+ tell disk "$basePackageName"
+       open
+       set current view of container window to icon view
+       set toolbar visible of container window to false
+       set statusbar visible of container window to false
+       set the bounds of container window to {400, 80, 1000, 500}
+       set viewOptions to the icon view options of container window
+       set arrangement of viewOptions to not arranged
+       set icon size of viewOptions to 100
+       set background picture of viewOptions to file ".background:background.png"
+       set position of item "$dstDir" of container window to {150, 150}
+       set position of item "Applications" of container window to {450, 150}
+       close
+       open
+       update without registering applications
+       delay 2
+ end tell
+end tell
+OSASCRIPT
+
+	my $osaCmd = "osascript -e '$script'";
+	`$osaCmd`;
+
+	#
+	# Detach the mounted volume, and convert the dmg to a compressed image.
+	#
+	my $detachCmd = "hdiutil detach $device"; 
+	`$detachCmd`;
+
+	my $tmp = $basePackageName . ".tmp.dmg";
+	move( "$packageName", $tmp );
+
+	`hdiutil convert $tmp -format UDBZ -o $packageName`;
+	`rm -f $tmp`;
+
+	#
+	# Now we also have to codesign the entire DMG, since other resources exist outside
+	# of the .app itself.
+	#
+	my $codesignDmgCmd = "codesign --deep --force --sign $signature $packageName";
+	`$codesignDmgCmd`;
+
+	#
+	# Finally, call it a success if the diskimage is there.  We could also
+	# validate the signature, etc.
+		#
+	if (-s "$packageName") {
+		printf "OSX diskimage created: $packageName ( $compressCmd )\n";
+	}
+	else {
+		printf "OSX diskimage $packageName failed. ( $compressCmd )\n";
+	}
+}
+
 sub packageZlab() {
 	#
 	# PACKAGE to config-specific location, or env-var specified, or default '/zlab'
@@ -1429,48 +1540,11 @@ sub packageZlab() {
 		# to avoid Gatekeeper path randomization (which prevents us from loading path-relative
 		# files), we need to now package as a disk-image on OSX, and then code-sign 
 		# the disk-image.  We also need to code-sign the app itself.  This is for KinTek
-		# only, and we use the ID the refs the KinTek Deverloper ID cert to sign with.
-
-		print "Creating DMG and code-signing for OSX...\n";
-		
-		my $packageName = $basePackageName;
-		$packageName .= ".dmg";
-		unlink( $packageName );
-
-		#
-		# codesign the actual app; that id/cert must exist on the machine for the KinTek Developer ID
-		#
-		my $codesignAppCmd = "find $dstDir -name '*.app' | xargs codesign --deep --force --sign '8Y42SX3ZP3'";
-		`$codesignAppCmd`;
-
-
-		# hdiutil will copy everything inside the dstDir, but we need the enclosing folder
-		# as well to make installation easier via the app.  So put all the dstDir inside
-		# yet another folder called "dmg"
-		$dmgDir = "dmg";
-		rmtree( $dmgDir );
-		mkdir( $dmgDir );
-		move( $dstDir, $dmgDir . "/" . $dstDir );
-
-		my $compressCmd = "hdiutil create $packageName -volname '$basePackageName' -srcFolder $dmgDir -format UDBZ";
-		# my( $volume, $directories, $file ) = File::Spec->splitpath( $dstDir );
-		# if( $directories ne "" && $file ne "" ) {
-		# 	# I don't think this is an issue for hdiutil
-		# }
-		`$compressCmd`;
-		if (-s "$packageName") {
-			printf "Distribution created: $packageName ( $compressCmd )\n";
-		}
-		else {
-			printf "Create distribution $packageName failed. ( $compressCmd )\n";
-		}
-
-		#
-		# Now we also have to codesign the entire DMG, since other resources exist outside
-		# of the .app itself.
-		#
-		my $codesignDmgCmd = "codesign --deep --force --sign '8Y42SX3ZP3' $packageName";
-		`$codesignDmgCmd`;
+		# only, and we use the ID tht refs the KinTek Deverloper ID cert to sign with.
+		my $signature = '8Y42SX3ZP3';
+			# this refers to a certificate/key-pair that must exist on the developer
+			# machine that builds this software for distribution.
+		createSignedDmg( $dstDir, $basePackageName, $signature );
 	}
 	if( $platform eq 'win32' ) {
 		my $packageName = $basePackageName;
