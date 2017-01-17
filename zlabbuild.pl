@@ -1281,7 +1281,8 @@ sub createSignedDmg {
 	# file named background.png in the package and uses it.
 	#
 	mkdir( "/Volumes/$basePackageName/.background" );
-	my $moveBackgroundCmd = "find $dmgDir/$dstDir -name 'background.png' -exec cp {} /Volumes/$basePackageName/.background \\; -quit";
+	my $backgroundName = "background144DPI.png";
+	my $moveBackgroundCmd = "find $dmgDir/$dstDir -name '$backgroundName' -exec cp {} /Volumes/$basePackageName/.background \\; -quit";
 	`$moveBackgroundCmd`;
 
 	#
@@ -1299,7 +1300,7 @@ tell application "Finder"
        set viewOptions to the icon view options of container window
        set arrangement of viewOptions to not arranged
        set icon size of viewOptions to 100
-       set background picture of viewOptions to file ".background:background.png"
+       set background picture of viewOptions to file ".background:$backgroundName"
        set position of item "$dstDir" of container window to {150, 150}
        set position of item "Applications" of container window to {450, 150}
        close
@@ -1324,6 +1325,12 @@ OSASCRIPT
 
 	`hdiutil convert $tmp -format UDBZ -o $packageName`;
 	`rm -f $tmp`;
+
+	`rm -rf dmg`;
+	`rm -rf zlab.app`;
+	`rm nul`;
+	`rm __svn__`;
+	`rm a.out`;
 
 	#
 	# Now we also have to codesign the entire DMG, since other resources exist outside
