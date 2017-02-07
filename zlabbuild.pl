@@ -1761,6 +1761,14 @@ sub testCompiler {
 			}
 			else {
 				$ENV{LIB} = "$devDir/../../LIB;$winSdkDir/lib/winv6.3/um/x86";				
+
+				# We are building with vs2013, but targeting 32bit, so we probably
+				# need to explicitly declare the target architecture, since it's 
+				# not the same as what we're building on.  I'm adding this while
+				# trying to build 32bit stopflow on a win10-64bit machine with 
+				# only vs2013 installed.
+				$ENV{CL_FLAGS} = "/MACHINE:X86"
+					# I'm going to look for these flags in win32_link
 			}
 		}
 		else {
@@ -2360,8 +2368,11 @@ sub win32_link {
 	$outfile = "\"$outfile\"";
 
 	my $debug = $options{debugsymbols} ? '/debug' : '';
+	my $flags = $ENV{CL_FLAGS}
+		# see testCompiler() where we setup 32 vs 64bit environment based on plugin
+		# and available compilers on windows.
 
-	return executeCmd( "link /nologo $debug @libs @files @excludelibs /out:$outfile" );
+	return executeCmd( "link /nologo $flags $debug @libs @files @excludelibs /out:$outfile" );
 }
 
 sub win32_createMakefile {
