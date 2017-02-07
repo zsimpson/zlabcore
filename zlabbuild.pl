@@ -1693,18 +1693,22 @@ sub testCompiler {
 
 		my $build64bit = platformBuild64Bit();
 
-		my @win64Dirs = ( "$ENV{ProgramFiles}/microsoft visual studio 12.0/vc/bin/amd64", "$ENV{ProgramFiles} (x86)/microsoft visual studio 12.0/vc/bin/amd64" );
-		if( $build64bit && ! findDirectory( @win64Dirs )  ) {
+		my @vs2013Amd64Dirs = ( "$ENV{ProgramFiles}/microsoft visual studio 12.0/vc/bin/amd64", "$ENV{ProgramFiles} (x86)/microsoft visual studio 12.0/vc/bin/amd64" );
+		if( $build64bit && ! findDirectory( @vs2013Amd64Dirs )  ) {
 			return "Configuration calls for 64bit build but amd64 tools not found.  Is Visual Studio 2013 installed?\n";
 		}
 
+		my @vs2013x86Dirs = ( "$ENV{ProgramFiles}/microsoft visual studio 12.0/vc/bin", "$ENV{ProgramFiles} (x86)/microsoft visual studio 12.0/vc/bin" );
+		my @vs2008Dirs = ( "$ENV{ProgramFiles}/Microsoft Visual Studio 9.0/VC/bin", "$ENV{ProgramFiles} (x86)/Microsoft Visual Studio 9.0/VC/bin" );		
+		
 		#
-		# If we're building 64bit, look for vs2013 first.  Else look for vs2008 first.  But look for them both either way.
+		# If we're building 64bit, look for vs2013 first.  Else look for vs2008 first.
+		# Note that we've already dealt with the error condition of wanting to build x64 but not finding 64bit-compilers.
 		#
 		my @dirs = ();
-		push @dirs, @win64Dirs if $build64bit;
+		push @dirs, @vs2013Amd64Dirs if $build64bit;
 		push @dirs, ( "$ENV{ProgramFiles}/Microsoft Visual Studio 9.0/VC/bin", "$ENV{ProgramFiles} (x86)/Microsoft Visual Studio 9.0/VC/bin" );
-		push @dirs, @win64Dirs if !$build64bit;
+		push @dirs, @vs2013x86Dirs;
 		#my @vc98dirs = ( "/dev/vc98/bin", "$ENV{ProgramFiles}/visual studio/vc98/bin", "./dev/vc98/bin", "../dev/vc98/bin", "../../dev/vc98/bin", "$ENV{ProgramFiles}/Microsoft Visual Studio/VC98/Bin" );
 			# I think we can ditch these by now?
 
@@ -1712,11 +1716,18 @@ sub testCompiler {
 		$devDir || return "Unable to find the windows compiler.";
 
 		if( $devDir =~ /12\.0/ ) {
-			# This may need some work.  I am assuming here that you have 64bit tools installed on 64bit windows.  This because the whole reason
-			# to support vs2013 was to get support for building 64bit apps for windows, and almost all installs of win7 and later are 64bit.
+			# We're going to build with vs2013, but we still may be trying to build 32bit software.
+			# This is new as of Feb 2017 -- kinexp no longer builds 32bit, but the stopflow software
+			# relies on lots of 3rd party DLLs etc and I don't want to go messing with all of that stuff
+			# and prefer to continue to build it 32bit.  And I don't want to have to install vs2008.
 			my @sdkDirs = ( "$ENV{ProgramFiles}/Windows Kits/8.1", "$ENV{ProgramFiles} (x86)/Windows Kits/8.1" );
 			$winSdkDir = findDirectory( @sdkDirs );
-			$ENV{path} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin/x64;/Program Files (x86)/MSBuild/12.0/bin/amd64;" . $userPath;
+			if( $build64bit ) {
+				$ENV{PATH} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin/x64;/Program Files (x86)/MSBuild/12.0/bin/amd64;" . $userPath;
+			}
+			else {
+				$ENV{PATH} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin;/Program Files (x86)/MSBuild/12.0/bin;" . $userPath;				
+			}
 		}
 		else {
 			#
@@ -1755,20 +1766,13 @@ sub testCompiler {
 
 		if( $devVersion == 18 ) {
 			# vs2013
-			$ENV{INCLUDE} = "$devDir/../../include;$winSdkDir/include/shared;$winSdkDir/include/um";
 			if( $build64bit ) {
+				$ENV{INCLUDE} = "$devDir/../../include;$winSdkDir/include/shared;$winSdkDir/include/um";
 				$ENV{LIB} = "$devDir/../../LIB/amd64;$winSdkDir/lib/winv6.3/um/x64";
 			}
 			else {
-				$ENV{LIB} = "$devDir/../../LIB;$winSdkDir/lib/winv6.3/um/x86";				
-
-				# We are building with vs2013, but targeting 32bit, so we probably
-				# need to explicitly declare the target architecture, since it's 
-				# not the same as what we're building on.  I'm adding this while
-				# trying to build 32bit stopflow on a win10-64bit machine with 
-				# only vs2013 installed.
-				$ENV{CL_FLAGS} = "/MACHINE:X86"
-					# I'm going to look for these flags in win32_link
+				$ENV{INCLUDE} = "$devDir/../include;$winSdkDir/include/shared;$winSdkDir/include/um";
+				$ENV{LIB} = "$devDir/../LIB;$winSdkDir/lib/winv6.3/um/x86";				
 			}
 		}
 		else {
@@ -2368,7 +2372,7 @@ sub win32_link {
 	$outfile = "\"$outfile\"";
 
 	my $debug = $options{debugsymbols} ? '/debug' : '';
-	my $flags = $ENV{CL_FLAGS}
+	my $flags = $ENV{CL_FLAGS};
 		# see testCompiler() where we setup 32 vs 64bit environment based on plugin
 		# and available compilers on windows.
 
