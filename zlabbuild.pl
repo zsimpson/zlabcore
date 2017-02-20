@@ -81,7 +81,7 @@ sdkSetup();
 #
 ####################################################################################################
 
-@configNames = ( 'none', 'kin_demo', 'kin_pro', 'kin_dev', 'stopflow', 'stopflow_zfit' );
+@configNames = ( 'none', 'kin_demo', 'kin_pro', 'kin_dev', 'kin_web', 'stopflow', 'stopflow_zfit' );
 
 #
 # Config: Kin
@@ -182,6 +182,26 @@ sub config_kin_dev {
 	else {
 		kinDataCopy( $dstDir );
 	}
+}
+
+sub config_kin_web {
+	my( $setup, $dstDir ) = @_;
+	if( $setup ) {
+		do( "$zlabDir/../plug_kintek/_kin/kinbuild.pl" ) || die "Unable to find _kin/kinbuild.pl";
+		$configInterface = 'console';
+		@configPlugins = ( 'kinweb' );
+		@configDefines = ( 'KIN' );
+		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
+		@configDefines = ( 'KIN', 'KIN_DEV', 'KIN_WEB', "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
+		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
+		$configPackageName = 'KinTek_Explorer_Web';
+		$configPackageTo = "$configPackageName";
+		@configExtraMenu = @config_kin_extraMenu;
+	}
+	else {
+		kinDataCopyWeb( $dstDir );
+	}	
 }
 
 sub options_kin {
@@ -2216,7 +2236,7 @@ sub macosx_compile {
 
 	my $debug = $options{debugsymbols} ? '-g' : '';
 
-	return executeCmd( "g++ -c -fpermissive -Wno-write-strings -Wno-non-template-friend -mmacosx-version-min=10.5 @includes $file -o $outfile" );
+	return executeCmd( "g++ -c -fpermissive -Wno-write-strings -mmacosx-version-min=10.5 @includes $file -o $outfile" );
 }
 
 sub macosx_link {
@@ -3409,7 +3429,7 @@ sub macosx_createMakefile {
 	print MAKEFILE "\n";
 	print MAKEFILE "\%.o : \%.cpp\n";
 	print MAKEFILE "\t\@echo \$<\n";
-	print MAKEFILE "\t\@\$(CC) \$(CFLAGS) -fpermissive -Wno-non-template-friend -c \$< -o \$@\n";
+	print MAKEFILE "\t\@\$(CC) \$(CFLAGS) -fpermissive -c \$< -o \$@\n";
 	print MAKEFILE "\n";
 	my $wroteCMessage = 0;
 	foreach ( sort uniquify( @{$hash{files}} ) ) {
