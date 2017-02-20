@@ -29,7 +29,7 @@ use File::Path 'rmtree';
 $userPath = $ENV{PATH};
 
 # SET Verbose for debug tracing
-$verbose = 0;
+$verbose = 1;
 
 # FIND platform
 $platform = determinePlatform();
@@ -192,7 +192,7 @@ sub config_kin_web {
 		@configPlugins = ( 'kinweb' );
 		@configDefines = ( 'KIN' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEV', 'KIN_WEB', "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_DEMO', 'NO_GSL', 'KIN_WEB', "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Web';
