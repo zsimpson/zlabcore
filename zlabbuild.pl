@@ -81,12 +81,7 @@ sdkSetup();
 #
 ####################################################################################################
 
-@configNames = ( 'none', 'clsb', 'kin_demo', 'kin_demo32', 'kin_pro', 'kin_pro32', 'kin_dev', 'kin_dev32', 'stopflow', 'stopflow_zfit', 'chakra' );
-if( $platform ne 'win32' ) {
-	# On non-windows platforms, don't present the 32bit configs, as these are windows-only.
-	@configNames = ( 'none', 'clsb', 'kin_demo', 'kin_pro', 'kin_dev', 'stopflow', 'stopflow_zfit', 'chakra' );
-}
-
+@configNames = ( 'none', 'kin_demo', 'kin_pro', 'kin_dev', 'stopflow', 'stopflow_zfit' );
 
 #
 # Config: Kin
@@ -149,14 +144,6 @@ sub config_kin_demo {
 		kinDataCopy( $dstDir );
 	}
 }
-sub config_kin_demo32 {
-	my( $setup, $dstDir ) = @_;
-	config_kin_demo( $setup, $dstDir );
-	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_DEMO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
-		$configPackageTo .= '_' . platformDescription();
-	}
-}
 
 sub config_kin_pro {
 	my( $setup, $dstDir ) = @_;
@@ -176,15 +163,6 @@ sub config_kin_pro {
 		kinDataCopy( $dstDir );
 	}
 }
-sub config_kin_pro32 {
-	my( $setup, $dstDir ) = @_;
-	config_kin_pro( $setup, $dstDir );
-	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
-		$configPackageTo .= '_' . platformDescription();
-	}
-}
-
 
 sub config_kin_dev {
 	my( $setup, $dstDir ) = @_;
@@ -203,14 +181,6 @@ sub config_kin_dev {
 	}
 	else {
 		kinDataCopy( $dstDir );
-	}
-}
-sub config_kin_dev32 {
-	my( $setup, $dstDir ) = @_;
-	config_kin_dev( $setup, $dstDir );
-	if( $setup ) {
-		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. (32bit) Copyright Kenneth A. Johnson and KinTek Corporation\"" );
-		$configPackageTo .= '_' . platformDescription();
 	}
 }
 
@@ -243,32 +213,6 @@ sub options_kin {
 	print $file "exportData3_z_label_default = Absorbance\n";
 }
 
-#
-# Config: CLSB (MOIL)
-#
-sub config_clsb {
-	do( "$zlabDir/../plug_clsb/_zmoil/zmoilbuild.pl" ) || die "Unable to find _zmoil/zmoilbuild.pl";
-	my $platformDesc = platformDescription();
-	$configPackageTo = "./zmoil_$platformDesc";
-	if( $platform eq 'win32' && -d "../../../moil.exe" ) {
-		$configPackageTo = "../../../moil.exe/zmoil";
-	}
-	elsif ( -d "../../../moil.source/exe" ) {
-		$configPackageTo = "../../../moil.source/exe/zmoil";
-	}
-	my( $setup, $dstDir ) = @_;
-	if( $setup ) {
-		$configInterface = 'gui';
-		@configPlugins = ( 'zmoil' );
-		@configDefines = ( 'ZMOIL', "TITLE=\"CLSB zmoil Version 0.4.$svnRev\"" );
-#		$configIconWin32 = '../plug_clsb/_zmoil/zmoil.ico';
-		$configIconMacosx = '../plug_clsb/_zmoil/zmoil.icns';
-		$configPackageName = 'zmoil';
-	}
-	else {
-		clsbDataCopy( $dstDir );
-	}
-}
 
 #
 # Config: Stopflow
@@ -308,24 +252,6 @@ sub config_stopflow_zfit {
 	}
 	else {
 		stopflowDataCopy( $dstDir );
-	}
-}
-
-sub config_chakra {
-	my( $setup, $dstDir ) = @_;
-	if( $setup ) {
-		do( "$zlabDir/../plug_blom/_chakra/chakrabuild.pl" ) || die "Unable to find _chakra/chakrabuild.pl";
-		$configInterface = 'gui';
-		@configPlugins = ( 'chakra' );
-		@configDefines = ( 'CHAKRA' );
-		@configDefines = ( 'CHAKRA', "TITLE=\"Chakras v0.1.$svnRev.  good karma software!\"" );
-		$configIconWin32 = '../plug_blom/_chakra/media/chakra.ico';
-		$configIconMacosx = '../plug_blom/_chakra/media/chakra.icns';
-		$configPackageName = 'Chakras';
-		$configPackageTo = "$configPackageName";
-	}
-	else {
-		chakraDataCopy( $dstDir );
 	}
 }
 
@@ -563,10 +489,8 @@ while( 1 ) {
 			foreach( @configNames ) {
 				# @TODO: isvalid fns for named configs as prereq for inclusion?
 				if( ( $_ eq 'none' ) ||
-					( $_ eq 'clsb' && -d '../plug_clsb' ) ||
 					( $_ =~ /kin_/ && -d '../plug_kintek' ) || 
-					( $_ =~ /stopflow/ && -d '../plug_kintek' ) ||
-					( $_ =~ /chakra/ && -d '../plug_blom' ) ) {
+					( $_ =~ /stopflow/ && -d '../plug_kintek' ) ) {
 					$configs{$_} = 0;
 				}
 			}
