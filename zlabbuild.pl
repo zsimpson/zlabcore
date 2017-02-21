@@ -29,7 +29,7 @@ use File::Path 'rmtree';
 $userPath = $ENV{PATH};
 
 # SET Verbose for debug tracing
-$verbose = 1;
+$verbose = 0;
 
 # FIND platform
 $platform = determinePlatform();
