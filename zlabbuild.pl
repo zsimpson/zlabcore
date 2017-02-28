@@ -87,7 +87,7 @@ sdkSetup();
 # Config: Kin
 #
 $kinVersionMajor = 6;
-$kinVersionMinor = 1;
+$kinVersionMinor = 2;
 @config_kin_extraMenu = (
 	"   kin: Add a hardware key to kinusbkeys (resets key memory)" => sub {
 		print "Connect the SecuTech key and press ENTER\n";
