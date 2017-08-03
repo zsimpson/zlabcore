@@ -1465,8 +1465,8 @@ sub packageZlab() {
 	# need to be individually recognizable as to platform.
 
 	my $basePackageName = $configPackageName ? $configPackageName : "zlab";
+	my $packageName = $basePackageName;
 	if( $platform eq 'macosx' || $platform eq 'linux' ) {
-		my $packageName = $basePackageName;
 		$packageName .= "_" . $platformDesc if !$packageName !~ /$platformDesc/;
 		$packageName .= ".tar.gz";
 		unlink( $packageName );
@@ -1494,6 +1494,13 @@ sub packageZlab() {
 			# this refers to a certificate/key-pair that must exist on the developer
 			# machine that builds this software for distribution.
 		createSignedDmg( $dstDir, $basePackageName, $signature );
+
+		# If we're creating a signed dmg, which consumes the build folder for itself,
+		# then unpack the compressed version so it's available for automated testing etc.
+		if( ! -d $dstDir ) {
+			$uncompressCmd = "tar -xzf $packageName";
+			`$uncompressCmd`;
+		}
 	}
 	if( $platform eq 'win32' ) {
 		my $packageName = $basePackageName;
