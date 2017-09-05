@@ -2,6 +2,7 @@
 use File::Spec;
 use File::Copy 'move';
 use File::Path 'rmtree';
+use File::Basename 'fileparse';
 
 # MAC: You need to have X11 SDk installed and the gcc etc.
 # The gcc is installed from Finder--HD--Applications--Installers--XCode tools--Developer.mpkg
