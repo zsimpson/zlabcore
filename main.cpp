@@ -922,7 +922,7 @@ int main( int argc, char **argv )
 	#endif
 
     // CREATE console
-	#if !defined(KIN_PRO) && !defined(KIN_DEMO) && !defined(STOPFLOW)
+	#if !defined(KIN_PRO) && !defined(STOPFLOW)
 		zconsoleCreate();
 		zconsolePositionAt( 0, 0, 800, 1000 );
 		trace( "Console created...\n" );
@@ -1018,7 +1018,7 @@ int main( int argc, char **argv )
 	ZUI::zuiBindKey( "escape", "type=QuitApp" );
 	ZUI::zuiBindKey( "alt_x", "type=QuitApp" );
 
-	#if !( (defined KIN_DEMO) || (defined KIN_PRO) )
+	#ifndef KIN_PRO
 		ZUI::zuiBindKey( " ", "type=ZUISet key=hidden toggle=1 toZUI=controlPanel; type=MouseShow" );
 	#endif
 	ZUI::zuiBindKey( "alt_z", "type=ZUISet key=hidden toggle=1 toZUI=fpsGraph" );

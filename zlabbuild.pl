@@ -82,7 +82,7 @@ sdkSetup();
 #
 ####################################################################################################
 
-@configNames = ( 'none', 'kin_demo', 'kin_pro', 'kin_dev', 'kin_web', 'stopflow', 'stopflow_zfit' );
+@configNames = ( 'none', 'kin_pro', 'kin_dev', 'kin_web', 'stopflow', 'stopflow_zfit' );
 
 #
 # Config: Kin
@@ -125,25 +125,6 @@ sdkSetup();
 	},
 );
 
-sub config_kin_demo {
-	my( $setup, $dstDir ) = @_;
-	if( $setup ) {
-		do( "$zlabDir/../plug_kintek/_kin/kinbuild.pl" ) || die "Unable to find _kin/kinbuild.pl";
-		$configInterface = 'gui';
-		@configPlugins = ( 'kin' );
-		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEMO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Student Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
-		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
-		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Student';
-		$configPackageTo = "$configPackageName";
-		@configExtraMenu = @config_kin_extraMenu;
-	}
-	else {
-		kinDataCopy( $dstDir );
-	}
-}
-
 sub config_kin_pro {
 	my( $setup, $dstDir ) = @_;
 	if( $setup ) {
@@ -151,7 +132,7 @@ sub config_kin_pro {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Professional Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Pro';
@@ -191,7 +172,7 @@ sub config_kin_web {
 		@configPlugins = ( 'kinweb' );
 		@configDefines = ( 'KIN' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEMO', 'NO_GSL', 'KIN_WEB', "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', 'KIN_WEB', "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Web';
@@ -1587,7 +1568,7 @@ sub platformBuild64Bit {
 	if( $platform eq 'win32' ) {
 		$build64bit = 0;
 			# almost always build 32bit on windows
-		if( $configName eq 'kin_dev' || $configName eq 'kin_demo' || $configName eq 'kin_pro' ) {
+		if( $configName eq 'kin_dev' || $configName eq 'kin_pro' ) {
 			$build64bit = 1;
 				# experimental, starting to ship to users june 2015 (kintek)
 		}
