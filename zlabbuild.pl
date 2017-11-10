@@ -1231,6 +1231,8 @@ tell application "Finder"
        open
        update without registering applications
        delay 2
+       close
+       eject
  end tell
 end tell
 OSASCRIPT
@@ -1238,11 +1240,22 @@ OSASCRIPT
 	my $osaCmd = "osascript -e '$script'";
 	`$osaCmd`;
 
+	# In OSX 10.13(.1?) the detach starting failing, saying that the resource was busy.
+	# So I added the close and eject in the osascript above, and then I don't need to
+	# detach anymore.  But I'm getting some kind of strange nx_kernel_mount messages
+	# that I think are the result of the eject, I'm not sure.  The output is ugly,
+	# but it seems to work.  I had added the sleep(3) because I thought
+	# it might allow the detach to work with just a "close" in the osascript, 
+	# but it didn't.  tfb nov 10, 2017
+
+	#sleep( 3 );
+
+
 	#
 	# Detach the mounted volume, and convert the dmg to a compressed image.
 	#
-	my $detachCmd = "hdiutil detach $device"; 
-	`$detachCmd`;
+	#my $detachCmd = "hdiutil detach $device"; 
+	#`$detachCmd`;
 
 	my $tmp = $basePackageName . ".tmp.dmg";
 	move( "$packageName", $tmp );
