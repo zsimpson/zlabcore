@@ -135,7 +135,7 @@ sub config_kin_pro {
 		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
-		$configPackageName = 'KinTek_Explorer_Pro';
+		$configPackageName = 'KinTek_Explorer';
 		$configPackageTo = "$configPackageName";
 		@configExtraMenu = @config_kin_extraMenu;
 	}
@@ -1165,7 +1165,7 @@ sub createSignedDmg {
 	print "Creating DMG and code-signing for OSX...\n";
 	
 	my $packageName = $basePackageName;
-	$packageName .= ".dmg";
+	$packageName .= "_MacOSX.dmg";
 	unlink( $packageName );
 
 	#
@@ -1609,16 +1609,14 @@ sub platformDescription {
 	my $s;
 
 	if( $platform eq 'win32' ) {
-		$s = platformBuild64Bit() ? "win64" : "win32";
+		$s = platformBuild64Bit() ? "Win64" : "Win32";
 	}
-
-	if( $platform eq 'linux' ) {
+	elsif( $platform eq 'linux' ) {
 		# @TODO Linux may get much more compilcated if we do distribution specific
-		$s .= "linux";
+		$s = "Linux";
 	}
-
-	if( $platform eq 'macosx' ) {
-		$s .= "macosx";
+	elsif( $platform eq 'macosx' ) {
+		$s = "MacOSX";
 	}
 
 	return $s;
