@@ -1249,6 +1249,8 @@ tell application "Finder"
        open
        update without registering applications
        delay 2
+       close
+       eject
  end tell
 end tell
 OSASCRIPT
