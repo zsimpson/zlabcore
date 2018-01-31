@@ -3476,6 +3476,8 @@ sub macosx_createMakefile {
 	print MAKEFILE "\t\@" . 'echo 	\<string\>????\</string\> >> zlab.app/Contents/Info.plist' . "\n";
 	print MAKEFILE "\t\@" . 'echo 	\<key\>CFBundleVersion\</key\> >> zlab.app/Contents/Info.plist' . "\n";
 	print MAKEFILE "\t\@" . 'echo 	\<string\>0.1\</string\> >> zlab.app/Contents/Info.plist' . "\n";
+	print MAKEFILE "\t\@" . 'echo 	\<key\>LSMinimumSystemVersion\</key\> >> zlab.app/Contents/Info.plist' . "\n";
+	print MAKEFILE "\t\@" . 'echo 	\<string\>' . "$minVersion" . '\</string\> >> zlab.app/Contents/Info.plist' . "\n";
 	print MAKEFILE "\t\@" . 'echo \</dict\> >> zlab.app/Contents/Info.plist' . "\n";
 	print MAKEFILE "\t\@" . 'echo \</plist\> >> zlab.app/Contents/Info.plist' . "\n";
 	print MAKEFILE "\t\@cp $hash{name}App zlab.app/Contents/MacOS/$hash{name}\n";
