@@ -3377,7 +3377,7 @@ sub macosx_createMakefile {
 	
 	my $optimize = "-O3";
 	my $compiler = 'g++';
-	my $minVersion = "10.5";
+	my $minVersion = "10.10";
 	my $windowLib  = "Cocoa";
 
 	# On 64bit osx, for some native Cocoa-based functionality we must use objective-C - since this
@@ -3419,7 +3419,7 @@ sub macosx_createMakefile {
 	print MAKEFILE "\n";
 	print MAKEFILE "CC = $compiler\n";
 	print MAKEFILE "\n";
-	print MAKEFILE "CFLAGS = -g $optimize -fwritable-strings -Wno-write-strings -mmacosx-version-min=$minVersion \$(INCLUDES) \$(DEFINES)\n";
+	print MAKEFILE "CFLAGS = -g $optimize -stdlib=libstdc++ -fwritable-strings -Wno-write-strings -mmacosx-version-min=$minVersion \$(INCLUDES) \$(DEFINES)\n";
 	print MAKEFILE "\n";
 	print MAKEFILE "#####################################################################################################\n";
 	print MAKEFILE "\n";
