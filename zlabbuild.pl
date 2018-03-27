@@ -82,7 +82,7 @@ sdkSetup();
 #
 ####################################################################################################
 
-@configNames = ( 'none', 'kin_pro', 'kin_dev', 'kin_web', 'stopflow', 'stopflow_zfit' );
+@configNames = ( 'none', 'kin_pro', 'kin_pro_py', 'kin_dev', 'kin_web', 'stopflow', 'stopflow_zfit' );
 
 #
 # Config: Kin
@@ -140,7 +140,26 @@ sub config_kin_pro {
 		@configExtraMenu = @config_kin_extraMenu;
 	}
 	else {
-		kinDataCopy( $dstDir );
+		kinDataCopy( $dstDir, 0 );
+	}
+}
+
+sub config_kin_pro_py {
+	my( $setup, $dstDir ) = @_;
+	if( $setup ) {
+		do( "$zlabDir/../plug_kintek/_kin/kinbuild.pl" ) || die "Unable to find _kin/kinbuild.pl";
+		$configInterface = 'gui';
+		@configPlugins = ( 'kin' );
+		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
+		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
+		$configPackageName = 'KinTek_Explorer_Py';
+		$configPackageTo = "$configPackageName";
+		@configExtraMenu = @config_kin_extraMenu;
+	}
+	else {
+		kinDataCopy( $dstDir, 1 );
 	}
 }
 
@@ -160,7 +179,7 @@ sub config_kin_dev {
 		@configExtraMenu = @config_kin_extraMenu;
 	}
 	else {
-		kinDataCopy( $dstDir );
+		kinDataCopy( $dstDir, 0 );
 	}
 }
 
@@ -1585,7 +1604,7 @@ sub platformBuild64Bit {
 	if( $platform eq 'win32' ) {
 		$build64bit = 0;
 			# almost always build 32bit on windows
-		if( $configName eq 'kin_dev' || $configName eq 'kin_pro' ) {
+		if( $configName eq 'kin_dev' || $configName eq 'kin_pro' || $configName eq 'kin_pro_py' ) {
 			$build64bit = 1;
 				# experimental, starting to ship to users june 2015 (kintek)
 		}
