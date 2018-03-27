@@ -155,7 +155,7 @@ sub config_kin_pro_py {
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Py';
-		$configPackageTo = "$configPackageName";
+		$configPackageTo = 'KinTek_Explorer';
 		@configExtraMenu = @config_kin_extraMenu;
 	}
 	else {
