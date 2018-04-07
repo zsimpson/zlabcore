@@ -4,6 +4,9 @@ use File::Copy 'move';
 use File::Path 'rmtree';
 use File::Basename 'fileparse';
 
+use lib "./lib";
+use Amazon::S3;
+
 # MAC: You need to have X11 SDk installed and the gcc etc.
 # The gcc is installed from Finder--HD--Applications--Installers--XCode tools--Developer.mpkg
 # The X11 I installed from http://chemistry.ucsc.edu/%7Ewgscott/temp/x11sdk_10.3.dmg.gz
@@ -87,44 +90,6 @@ sdkSetup();
 #
 # Config: Kin
 #
-@config_kin_extraMenu = (
-	"   kin: Add a hardware key to kinusbkeys (resets key memory)" => sub {
-		print "Connect the SecuTech key and press ENTER\n";
-		<STDIN>;
-		print "Patience...reseting key memory takes several seconds...\n";
-		kinHardwareKeyAddKey();
-		kinHardwareKeyInfo();
-	},
-
-	"   kin: Get hardware key info" => sub {
-		print "Connect the SecuTech key and press ENTER\n";
-		<STDIN>;
-		kinHardwareKeyInfo();
-	},
-
-	"   kin: Program hardware key with time limit" => sub {
-		my $defaultTimeLimit = 1200;
-		print "Connect the Secutech key, set time limit ( <0 for unlimited ), or ENTER for default.\n";
-		print "Time Limit (minutes) [ $defaultTimeLimit ]:";
-		$_ = <STDIN>;
-		chomp;
-		kinHardwareKeyLimitTime( $_ ? $_ : $defaultTimeLimit );
-	},
-	
-	"   kin: Program hardware key for SpectraFit" => sub {
-		my $defaultSpectraFit = 0;
-		print "Connect the Secutech key, set value ( 0->OFF, 1->ON ), or ENTER for default.\n";
-		print "Enable SpectraFit? [ $defaultSpectraFit ]:";
-		$_ = <STDIN>;
-		chomp;
-		kinHardwareKeyProgramSpectraFit( $_ ? $_ : $defaultSpectraFit );
-	},
-	
-	"   kin: Update usbkey list" => sub {
-		kinUpdateKeyList( "" );
-	},
-);
-
 sub config_kin_pro {
 	my( $setup, $dstDir ) = @_;
 	if( $setup ) {
@@ -321,6 +286,8 @@ sub configLoad {
 }
 
 sub createMakeFileCleanBuildPackage() {
+	@packagesCreated = ();
+
 	$compilerOK = testCompiler( $platform );
 	if( $compilerOK ne "OK" ) {
 		die $compilerOK;
@@ -356,6 +323,60 @@ if( $ARGV[0] ) {
 			&compileAndTestSDKsInOrder( @configUsedSDKs );
 		}
 		createMakeFileCleanBuildPackage();
+		exit;
+	}
+	elsif( $ARGV[0] eq 'kintek' ) {
+		#		
+		# Build & package multiple configurations, only building the SDKs the first time.
+		#
+		pushCwd( $buildDir );
+
+		my $begin = time();
+
+		my $buildSDKs = !$ARGV[1] || $ARGV[1] ne "nosdk";
+		print "Building multiple configs for KinTek Explorer.  Build SDKs: $buildSDKs\n";
+
+		my @uploadFiles = ();
+		my @configs = qw( kin_pro_py kin_pro );
+
+		foreach( @configs ) {
+			configClear();
+			$configName = $_;
+			print "\n***\n***  clean build+package for configuration \"$configName\"...\n***\n";
+			&{'config_' . $configName}( 1 );
+			analyzeUsedFiles();
+			if( $buildSDKs ) {
+				&compileAndTestSDKsInOrder( @configUsedSDKs );
+				$buildSDKs = 0;
+			}
+			createMakeFileCleanBuildPackage();
+				# this resets and then populates the @packagesCreated list.
+			push @uploadFiles, @packagesCreated;
+		}	
+
+		my $kintekVer = "$kinVersionMajor.$kinVersionMinor.$svnRev";
+		my $platformDesc = platformDescription();
+		my $verFile = "KinTekExplorerVersion_$platformDesc.txt";
+		unlink $verFile or warn "Can't unlink $verFile";
+		open(my $fh, '>', $verFile) or die "Can't open $verFile";
+		print $fh "$kintekVer\n";
+		close $fh;
+		push @uploadFiles, $verFile;
+
+		#
+		# Put built apps on S3
+		#
+		print "\n***\n***  uploading builds to S3 ...\n***\n";
+		foreach my $f ( @uploadFiles ) {
+			my $start = time();
+			print( "Uploading $f ... " );
+			kinUploadToS3( $f );
+			my $elapsed = time() - $start;
+			print( "$elapsed seconds.\n" );
+		}
+
+		my $total = (time() - $begin) / 60.0;
+		print "\nKinTek Explorer $kintekVer : done. ($total minutes)\n";
 		exit;
 	}
 	else {
@@ -1305,6 +1326,7 @@ OSASCRIPT
 		#
 	if (-s "$packageName") {
 		printf "OSX diskimage created: $packageName ( $compressCmd )\n";
+		push @packagesCreated, $packageName;
 	}
 	else {
 		printf "OSX diskimage $packageName failed. ( $compressCmd )\n";
@@ -1481,7 +1503,7 @@ sub packageZlab() {
 	# Package into a single compressed file for distribution.
 	# We append OS/processor ids as necessary since these files
 	# need to be individually recognizable as to platform.
-
+	@packagesCreated = ();
 	my $basePackageName = $configPackageName ? $configPackageName : "zlab";
 	my $packageName = $basePackageName;
 	if( $platform eq 'macosx' || $platform eq 'linux' ) {
@@ -1497,6 +1519,7 @@ sub packageZlab() {
 		`$compressCmd`;
 		if (-s "$packageName") {
 			printf "Distribution created: $packageName ( $compressCmd )\n";
+			push @packagesCreated, $packageName;
 		}
 		else {
 			printf "Create distribution $packageName failed. ( $compressCmd )\n";
@@ -1529,6 +1552,7 @@ sub packageZlab() {
 		`$compressCmd`;
 		if( -s "$packageName" ) {
 			printf "Distribution created: $packageName ( $compressCmd )\n";
+			push @packagesCreated, $packageName;
 		}
 		else {
 			printf "Create distribution $packageName failed. ( $compressCmd )\n";
