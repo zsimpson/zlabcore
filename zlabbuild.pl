@@ -334,7 +334,7 @@ if( $ARGV[0] ) {
 		my $begin = time();
 
 		my $buildSDKs = !$ARGV[1] || $ARGV[1] ne "nosdk";
-		print "Building multiple configs for KinTek Explorer.  Build SDKs: $buildSDKs\n";
+		printf "Building multiple configs for KinTek Explorer.  Build SDKs: %s\n",  $buildSDKs ? "Yes" : "No";
 
 		my @uploadFiles = ();
 		my @configs = qw( kin_pro_py kin_pro );
