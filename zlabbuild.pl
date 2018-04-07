@@ -339,6 +339,7 @@ if( $ARGV[0] ) {
 		my @uploadFiles = ();
 		my @configs = qw( kin_pro_py kin_pro );
 
+
 		foreach( @configs ) {
 			configClear();
 			$configName = $_;
@@ -364,15 +365,29 @@ if( $ARGV[0] ) {
 		push @uploadFiles, $verFile;
 
 		#
+		# Verify that we built what we think we did before uploading
+		#
+		my $allBuilt = 0;
+		if( $platformDesc eq 'MacOSX' ) {
+			$allBuilt = scalar( @uploadFiles ) == 5;
+				# On OSX, we have .tgz and .dmg for each config, plus the version file.
+		}
+		elsif( $platformDesc eq 'Win64' ) {
+			$allBuilt = scalar( @uploadFiles ) == 3;
+				# On Win, we have .zip for each config, plus the version file.
+		}
+		die "\n***\n*** ERROR: not all configs built successfully.\n***\n" if !$allBuilt;
+
+		#
 		# Put built apps on S3
 		#
 		print "\n***\n***  uploading builds to S3 ...\n***\n";
 		foreach my $f ( @uploadFiles ) {
 			my $start = time();
-			print( "Uploading $f ... " );
+			print( "Uploading $f ...\n" );
 			kinUploadToS3( $f );
 			my $elapsed = time() - $start;
-			print( "$elapsed seconds.\n" );
+			print( "  --> $elapsed seconds.\n" );
 		}
 
 		my $total = (time() - $begin) / 60.0;
@@ -1330,6 +1345,7 @@ OSASCRIPT
 	}
 	else {
 		printf "OSX diskimage $packageName failed. ( $compressCmd )\n";
+		die "***\n*** DMG creation failed: do you have an existing KinTek DMG file mounted on the Desktop?\n***\n";
 	}
 }
 
