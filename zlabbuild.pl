@@ -40,6 +40,8 @@ $platform = determinePlatform();
 my $svnRev = svnRevision();
 	# In the case we're using git, the YYYYMMDD date value will be returned for svnRev.
 	# This can be used as a buildstamp e.g. version Major.Minor.svnRev
+my $githash = gitLatestCommit();
+	# abbreviated git commit 
 
 # FIND the critical folders, @TODO create them if not found
 $sdkDir    = findDirectory( qw^../sdkpub^ );
@@ -97,7 +99,8 @@ sub config_kin_pro {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		my $kinver = "$kinVersionMajor.$kinVersionMinor.$svnRev.$githash";
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "KINVER=\"$kinver\"", "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer';
@@ -116,7 +119,8 @@ sub config_kin_pro_py {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		my $kinver = "$kinVersionMajor.$kinVersionMinor.$svnRev.$githash";
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "KINVER=\"$kinver\"", "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Py';
@@ -136,7 +140,8 @@ sub config_kin_dev {
 		@configPlugins = ( 'kin', 'kingsl' );
 		@configDefines = ( 'KIN' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_DEV', "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		my $kinver = "$kinVersionMajor.$kinVersionMinor.$svnRev.$githash";
+		@configDefines = ( 'KIN', 'KIN_DEV', "KINVER=\"$kinver\"", "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Dev';
@@ -156,7 +161,8 @@ sub config_kin_web {
 		@configPlugins = ( 'kinweb' );
 		@configDefines = ( 'KIN' );
 		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', 'KIN_WEB', "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		my $kinver = "$kinVersionMajor.$kinVersionMinor.$svnRev.$githash";
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', 'KIN_WEB', "KINVER=\"$kinver\"", "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Web';
@@ -1609,12 +1615,16 @@ sub svnRevision( $ ) {
 		if( $mday < 10 ) {
 			$mday = "0$mday"
 		}
-		my $hash = `git log -n 1 --pretty=format:'%h'`;
-			# abbreviated hash of the most recent commit - so we can tell what code this was built from,
-			# assuming there are no local changes! (which there should not be for production builds!)
-		$rev = "$year$mon$mday.$hash";
+		$rev = "$year$mon$mday";
 	}
 	return $rev;
+}
+
+sub gitLatestCommit() {
+	my $hash = `git log -n 1 --pretty=format:'%h'`;
+		# abbreviated hash of the most recent commit - so we can tell what code this was built from,
+		# assuming there are no local changes! (which there should not be for production builds!)
+	return $hash	
 }
 
 sub checkForSvn() {
