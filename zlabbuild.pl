@@ -1609,7 +1609,10 @@ sub svnRevision( $ ) {
 		if( $mday < 10 ) {
 			$mday = "0$mday"
 		}
-		$rev = "$year$mon$mday";
+		my $hash = `git log -n 1 --pretty=format:'%h'`;
+			# abbreviated hash of the most recent commit - so we can tell what code this was built from,
+			# assuming there are no local changes! (which there should not be for production builds!)
+		$rev = "$year$mon$mday.$hash";
 	}
 	return $rev;
 }
