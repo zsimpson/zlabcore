@@ -39,8 +39,12 @@ $verbose = 0;
 $platform = determinePlatform();
 my $svnRev = svnRevision();
 	# In the case we're using git, the YYYYMMDD date value will be returned for svnRev.
-	# This can be used as a buildstamp e.g. version Major.Minor.svnRev
-my $githash = gitLatestCommit();
+	# This can be used as a buildstamp e.g. version Major.Minor.svnRev.  This was done
+	# for historical reasons, so that projects using svnRev will get something usable
+	# from this string.  Consider using $gitRev below.
+my $buildDate = buildDate();
+	# YYYYMMDD date of build.  What svnRev above returns if svn not used.
+my $gitRev = gitRevision();
 	# abbreviated git commit 
 
 # FIND the critical folders, @TODO create them if not found
@@ -98,9 +102,8 @@ sub config_kin_pro {
 		do( "$zlabDir/../plug_kintek/_kin/kinbuild.pl" ) || die "Unable to find _kin/kinbuild.pl";
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
-		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		my $kinver = "$kinVersionMajor.$kinVersionMinor.$svnRev.$githash";
-		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "KINVER=\"$kinver\"", "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		my $kinver = "$kinVersionMajor.$kinVersionMinor.$buildDate";
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "KINVER=\"$kinver.$gitRev\"", "TITLE=\"KinTek Global Kinetic Explorer Version $kinver. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer';
@@ -118,9 +121,8 @@ sub config_kin_pro_py {
 		do( "$zlabDir/../plug_kintek/_kin/kinbuild.pl" ) || die "Unable to find _kin/kinbuild.pl";
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin' );
-		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		my $kinver = "$kinVersionMajor.$kinVersionMinor.$svnRev.$githash";
-		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "KINVER=\"$kinver\"", "TITLE=\"KinTek Global Kinetic Explorer Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		my $kinver = "$kinVersionMajor.$kinVersionMinor.$buildDate";
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', "KINVER=\"$kinver.$gitRev\"", "TITLE=\"KinTek Global Kinetic Explorer Version $kinver. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Py';
@@ -139,9 +141,8 @@ sub config_kin_dev {
 		$configInterface = 'gui';
 		@configPlugins = ( 'kin', 'kingsl' );
 		@configDefines = ( 'KIN' );
-		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		my $kinver = "$kinVersionMajor.$kinVersionMinor.$svnRev.$githash";
-		@configDefines = ( 'KIN', 'KIN_DEV', "KINVER=\"$kinver\"", "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		my $kinver = "$kinVersionMajor.$kinVersionMinor.$buildDate";
+		@configDefines = ( 'KIN', 'KIN_DEV', "KINVER=\"$kinver.$gitRev\"", "TITLE=\"KinTek Global Kinetic Explorer DEV Version $kinver. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Dev';
@@ -160,9 +161,8 @@ sub config_kin_web {
 		$configInterface = 'console';
 		@configPlugins = ( 'kinweb' );
 		@configDefines = ( 'KIN' );
-		$svnRev = svnRevision( $configPluginPaths{ '_kin' } ); 
-		my $kinver = "$kinVersionMajor.$kinVersionMinor.$svnRev.$githash";
-		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', 'KIN_WEB', "KINVER=\"$kinver\"", "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinVersionMajor.$kinVersionMinor.$svnRev. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
+		my $kinver = "$kinVersionMajor.$kinVersionMinor.$buildDate";
+		@configDefines = ( 'KIN', 'KIN_PRO', 'NO_GSL', 'KIN_WEB', "KINVER=\"$kinver.$gitRev\"", "TITLE=\"KinTek Global Kinetic Explorer WEB Version $kinver. Copyright Kenneth A. Johnson and KinTek Corporation\"" );
 		$configIconWin32 = '../plug_kintek/_kin/kin.ico';
 		$configIconMacosx = '../plug_kintek/_kin/kin.icns';
 		$configPackageName = 'KinTek_Explorer_Web';
@@ -227,7 +227,7 @@ sub config_stopflow {
         # actual title is set at runtime, but set something so it never appears as 'zlab'
 		@configDefines = ( 'STOPFLOW', "TITLE=\"Stopflow\"" );
 		$configIconWin32 = '../plug_kintek/_stopflow/stopflow.ico';
-		$configPackageName = "KinTek_Stopflow_$svnRev";
+		$configPackageName = "KinTek_Stopflow_$buildDate";
 		$configPackageTo = "$configPackageName";
 		stopflowDllCopy( $zlabDir, $buildDir );
 	}
@@ -246,7 +246,7 @@ sub config_stopflow_zfit {
         # actual title is set at runtime, but set something so it never appears as 'zlab'
 		@configDefines = ( 'STOPFLOW', "TITLE=\"Stopflow\"" );
 		$configIconWin32 = '../plug_kintek/_stopflow/stopflow.ico';
-		$configPackageName = "KinTek_StopflowZfit_$svnRev";
+		$configPackageName = "KinTek_StopflowZfit_$buildDate";
 		$configPackageTo = "$configPackageName";
 		stopflowDllCopy( $zlabDir, $buildDir );
 	}
@@ -367,7 +367,7 @@ if( $ARGV[0] ) {
 			push @uploadFiles, @packagesCreated;
 		}	
 
-		my $kintekVer = "$kinVersionMajor.$kinVersionMinor.$svnRev";
+		my $kintekVer = "$kinVersionMajor.$kinVersionMinor.$buildDate";
 		my $platformDesc = platformDescription();
 		my $verFile = "KinTekExplorerVersion_$platformDesc.txt";
 		unlink $verFile or warn "Can't unlink $verFile";
@@ -1596,6 +1596,20 @@ sub packageZlab() {
 #
 ####################################################################################################
 
+sub buildDate() {
+	($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	$year -= 100;
+	$mon  += 1;
+	if( $mon < 10 ) {
+		$mon = "0$mon";
+	}
+	if( $mday < 10 ) {
+		$mday = "0$mday"
+	}
+	$buildDate = "$year$mon$mday";
+	return $buildDate;
+}
+
 sub svnRevision( $ ) {
 	my ( $pathForVersion ) = @_;
 	$pathForVersion = ".." if( $pathForVersion eq "" );
@@ -1605,26 +1619,26 @@ sub svnRevision( $ ) {
 	$str =~ /Revision: (\d+)/;
 	$rev = $1;
 	if( $rev eq '' ) {
-		# print "No svn revision found, assuming we're using git.  Using date for build-revision/ID.\n";
-		($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-		$year -= 100;
-		$mon  += 1;
-		if( $mon < 10 ) {
-			$mon = "0$mon";
-		}
-		if( $mday < 10 ) {
-			$mday = "0$mday"
-		}
-		$rev = "$year$mon$mday";
+		# print "No svn revision found, using date for build-revision/ID.\n";
+		$rev = buildDate();
 	}
 	return $rev;
 }
 
-sub gitLatestCommit() {
-	my $hash = `git log -n 1 --pretty=format:'%h'`;
-		# abbreviated hash of the most recent commit - so we can tell what code this was built from,
-		# assuming there are no local changes! (which there should not be for production builds!)
-	return $hash	
+sub gitRevision( $ ) {
+	my ( $pathForVersion ) = @_;
+	$pathForVersion = ".." if( $pathForVersion eq "" );
+
+	pushCwd( $pathForVersion );
+		my $rev = `git log -n 1 --pretty=format:'%h' 2> __git__`;
+			# abbreviated hash of the most recent commit - so we can tell what code this was built from,
+			# assuming there are no local changes! (which there should not be for production builds!)
+	popCwd();
+
+	if( $rev == '') {
+		$rev = buildDate();
+	}
+	return $rev	
 }
 
 sub checkForSvn() {
