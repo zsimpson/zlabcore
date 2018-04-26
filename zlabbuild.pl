@@ -1630,7 +1630,7 @@ sub gitRevision( $ ) {
 	$pathForVersion = ".." if( $pathForVersion eq "" );
 
 	pushCwd( $pathForVersion );
-		my $rev = `git log -n 1 --pretty=format:'%h' 2> __git__`;
+		my $rev = `git log -n 1 --pretty=format:%h 2> __git__`;
 			# abbreviated hash of the most recent commit - so we can tell what code this was built from,
 			# assuming there are no local changes! (which there should not be for production builds!)
 	popCwd();
