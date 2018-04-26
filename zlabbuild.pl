@@ -1635,7 +1635,7 @@ sub gitRevision( $ ) {
 			# assuming there are no local changes! (which there should not be for production builds!)
 	popCwd();
 
-	if( $rev == '') {
+	if( $rev eq '') {
 		$rev = buildDate();
 	}
 	return $rev	
