@@ -35,6 +35,10 @@ $userPath = $ENV{PATH};
 # SET Verbose for debug tracing
 $verbose = 0;
 
+# SET nozip to prevent final compress/packaging; may be set from command-line,
+# e.g. python zlabbuild.pl nozip
+$nozip = 0;
+
 # FIND platform
 $platform = determinePlatform();
 my $svnRev = svnRevision();
@@ -405,6 +409,9 @@ if( $ARGV[0] ) {
 		my $total = (time() - $begin) / 60.0;
 		print "\nKinTek Explorer $kintekVer : done. ($total minutes)\n";
 		exit;
+	}
+	elsif( $ARGV[0] eq 'nozip' ) {
+		$nozip = 1;
 	}
 	else {
 		print "   ** Unknown configuration specified: $ARGV[0]\n";
@@ -1527,6 +1534,9 @@ sub packageZlab() {
 	#
 	# COMPRESS
 	#
+	if( $nozip ) {
+		return;
+	}
 
 	# Package into a single compressed file for distribution.
 	# We append OS/processor ids as necessary since these files
