@@ -329,6 +329,12 @@ configClear();
 if( $ARGV[0] ) {
 	# if valid config name spec'd from command line, select it, 
 	# build required sdks, and package.  (for automated builds)
+
+	$compilerOK = testCompiler( $platform );
+	if( $compilerOK ne "OK" ) {
+		die $compilerOK;
+	}
+
 	if( defined &{'config_' . $ARGV[0]} ) {
 		pushCwd( $buildDir );
 		$configName = $ARGV[0];
