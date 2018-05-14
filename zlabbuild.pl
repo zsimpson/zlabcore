@@ -330,14 +330,13 @@ if( $ARGV[0] ) {
 	# if valid config name spec'd from command line, select it, 
 	# build required sdks, and package.  (for automated builds)
 
-	$compilerOK = testCompiler( $platform );
-	if( $compilerOK ne "OK" ) {
-		die $compilerOK;
-	}
-
 	if( defined &{'config_' . $ARGV[0]} ) {
 		pushCwd( $buildDir );
 		$configName = $ARGV[0];
+		$compilerOK = testCompiler( $platform );
+		if( $compilerOK ne "OK" ) {
+			die $compilerOK;
+		}
 		&{'config_' . $configName}( 1 );
 		analyzeUsedFiles();
 		print "Performing clean build+package for configuration \"$configName\"...\n";
@@ -366,6 +365,10 @@ if( $ARGV[0] ) {
 			configClear();
 			$configName = $_;
 			print "\n***\n***  clean build+package for configuration \"$configName\"...\n***\n";
+			$compilerOK = testCompiler( $platform );
+			if( $compilerOK ne "OK" ) {
+				die $compilerOK;
+			}
 			&{'config_' . $configName}( 1 );
 			analyzeUsedFiles();
 			if( $buildSDKs ) {
@@ -1746,7 +1749,7 @@ sub testCompiler {
 		# make it menu-selectable etc.  (tfb 2 june 2015)
 
 		my $build64bit = platformBuild64Bit();
-
+	
 		my @vs2013Amd64Dirs = ( "$ENV{ProgramFiles}/microsoft visual studio 12.0/vc/bin/amd64", "$ENV{ProgramFiles} (x86)/microsoft visual studio 12.0/vc/bin/amd64" );
 		if( $build64bit && ! findDirectory( @vs2013Amd64Dirs )  ) {
 			return "Configuration calls for 64bit build but amd64 tools not found.  Is Visual Studio 2013 installed?\n";
