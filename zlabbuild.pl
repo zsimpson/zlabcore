@@ -202,19 +202,19 @@ sub options_kin {
 	print $file "exportWavelen_z_label_default = Absorbance\n";
 	print $file "exportData2_x_label_default = Time (s)\n";
 	print $file "exportData2_y_label_default = Concentration (uM)\n";
-	print $file "exportData2_plot_sigma_default = 1\n";
+	print $file "exportData2_plot_sigma_default = 0\n";
 	print $file "exportData3_x_label_default = Wavelength (nm)\n";
 	print $file "exportData3_y_label_default = Time (s)\n";
 	print $file "exportData3_z_label_default = Absorbance\n";
 	print $file "exportRateVsConcFit_x_label_default = Concentration (uM)\n";
 	print $file "exportRateVsConcFit_y_label_default = Rate\n";
-	print $file "exportRateVsConcFit_plot_sigma_default = 1\n";
+	print $file "exportRateVsConcFit_plot_sigma_default = 0\n";
 	print $file "exportAmpVsConcFit_x_label_default = Concentration (uM)\n";
 	print $file "exportAmpVsConcFit_y_label_default = Amplitude\n";
-	print $file "exportAmpVsConcFit_plot_sigma_default = 1\n";
+	print $file "exportAmpVsConcFit_plot_sigma_default = 0\n";
 	print $file "exportExpAfit_x_label_default = Time (s)\n";
 	print $file "exportExpAfit_y_label_default = Concentration (uM)\n";
-	print $file "exportExpAfit_plot_sigma_default = 1\n";
+	print $file "exportExpAfit_plot_sigma_default = 0\n";
 }
 
 
