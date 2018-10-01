@@ -2349,7 +2349,7 @@ sub macosx_compile {
 
 	my $debug = $options{debugsymbols} ? '-g' : '';
 
-	return executeCmd( "g++ -c -fpermissive -Wno-write-strings -mmacosx-version-min=10.5 @includes $file -o $outfile" );
+	return executeCmd( "g++ -c -fpermissive -Wno-write-strings -mmacosx-version-min=10.11 @includes $file -o $outfile" );
 }
 
 sub macosx_link {
@@ -2372,7 +2372,7 @@ sub macosx_link {
 	map{ $_ = "\"$_\" " } @files;
 	$outfile = "\"$outfile\"";
 
-	my $ret = executeCmd( "glibtool $libtoolflags --mode=link g++ -mmacosx-version-min=10.5 @libs @files -o $outfile $extralink" );
+	my $ret = executeCmd( "glibtool $libtoolflags --mode=link g++ -mmacosx-version-min=10.11 @libs @files -o $outfile $extralink" );
 	if( $outfile =~ /\"(.*)\.exe\"/ ) {
 		# libtool refuses to create a exe file, it must be renamed if that's what you ask for
 		rename( $1, "$1.exe" );
@@ -3488,7 +3488,7 @@ sub macosx_createMakefile {
 	
 	my $optimize = "-O3";
 	my $compiler = 'g++';
-	my $minVersion = "10.10";
+	my $minVersion = "10.11";
 	my $windowLib  = "Cocoa";
 
 	# On 64bit osx, for some native Cocoa-based functionality we must use objective-C - since this
@@ -3530,7 +3530,7 @@ sub macosx_createMakefile {
 	print MAKEFILE "\n";
 	print MAKEFILE "CC = $compiler\n";
 	print MAKEFILE "\n";
-	print MAKEFILE "CFLAGS = -g $optimize -stdlib=libstdc++ -fwritable-strings -Wno-write-strings -mmacosx-version-min=$minVersion \$(INCLUDES) \$(DEFINES)\n";
+	print MAKEFILE "CFLAGS = -g $optimize -fwritable-strings -Wno-write-strings -mmacosx-version-min=$minVersion \$(INCLUDES) \$(DEFINES)\n";
 	print MAKEFILE "\n";
 	print MAKEFILE "#####################################################################################################\n";
 	print MAKEFILE "\n";
@@ -4014,7 +4014,6 @@ ENDOFPBXPROJ
 	print PBXPROJ <<BUILDCFG;
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LIBRARY = "libstdc++";
 				COPY_PHASE_STRIP = NO;
 				GCC_REUSE_STRINGS = NO;
 				$archSettings
@@ -4028,7 +4027,6 @@ BUILDCFG
 	print PBXPROJ <<BUILDCFG;
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LIBRARY = "libstdc++";
 				COPY_PHASE_STRIP = YES;
 				GCC_REUSE_STRINGS = NO;
 				$archSettings
@@ -4043,7 +4041,6 @@ BUILDCFG
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LIBRARY = "libstdc++";
 				COPY_PHASE_STRIP = NO;
 				GCC_REUSE_STRINGS = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -4079,6 +4076,8 @@ BUILDCFG
 
 	print PBXPROJ "\t\t\t\tHEADER_SEARCH_PATHS = (\n";
 	map{ $_ =~ s/^\.\.\//\.\.\/\.\.\//g; print PBXPROJ "\t\t\t\t\t$_,\n" } uniquify( @{$hash{includes}} );
+	print PBXPROJ "\t\t\t\t\t\"/usr/include/c++/4.2.1\",\n";
+		# deal with Xcode10 issue 
 	print PBXPROJ "\t\t\t\t);\n";
 	
 	print PBXPROJ "\t\t\t\tINFOPLIST_FILE = \"$name-Info.plist\";\n";
@@ -4104,7 +4103,6 @@ BUILDCFG
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				GCC_REUSE_STRINGS = NO;
-				CLANG_CXX_LIBRARY = "libstdc++";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
