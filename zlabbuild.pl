@@ -4076,8 +4076,6 @@ BUILDCFG
 
 	print PBXPROJ "\t\t\t\tHEADER_SEARCH_PATHS = (\n";
 	map{ $_ =~ s/^\.\.\//\.\.\/\.\.\//g; print PBXPROJ "\t\t\t\t\t$_,\n" } uniquify( @{$hash{includes}} );
-	print PBXPROJ "\t\t\t\t\t\"/usr/include/c++/4.2.1\",\n";
-		# deal with Xcode10 issue 
 	print PBXPROJ "\t\t\t\t);\n";
 	
 	print PBXPROJ "\t\t\t\tINFOPLIST_FILE = \"$name-Info.plist\";\n";
