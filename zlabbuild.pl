@@ -215,6 +215,9 @@ sub options_kin {
 	print $file "exportExpAfit_x_label_default = Time (s)\n";
 	print $file "exportExpAfit_y_label_default = Concentration (uM)\n";
 	print $file "exportExpAfit_plot_sigma_default = 0\n";
+	print $file "exportRFit_x_label_default = Time (s)\n";
+	print $file "exportRFit_y_label_default = Concentration (uM)\n";
+	print $file "exportRFit_plot_sigma_default = 0\n";
 }
 
 
