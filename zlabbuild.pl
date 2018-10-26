@@ -1786,7 +1786,9 @@ sub testCompiler {
 				$ENV{PATH} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin/x64;/Program Files (x86)/MSBuild/12.0/bin/amd64;" . $userPath;
 			}
 			else {
-				$ENV{PATH} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin;/Program Files (x86)/MSBuild/12.0/bin;" . $userPath;				
+				my @msbuildDirs = ( "/Program Files (x86)/MSBuild/12.0", "/Program Files/MSBuild/12.0" );
+				my $msbuildDir = findDirectory( @msbuildDirs );
+				$ENV{PATH} = "$devDir;$devDir/../../vcpackages;$devDir/../../../common7/ide;$winSdkDir/bin;$msbuildDir/bin;" . $userPath;				
 			}
 		}
 		else {
@@ -1839,7 +1841,6 @@ sub testCompiler {
 			$ENV{INCLUDE} = "$devDir/../include;$winSdkDir/include";
 			$ENV{LIB} = "$devDir/../lib;$winSdkDir/lib";
 		}
-
 		return "OK";
 	}
 	elsif( $platform eq 'linux' ) {
