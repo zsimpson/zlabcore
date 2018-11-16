@@ -1188,6 +1188,20 @@ int main( int argc, char **argv )
 
 			SFTIME_END (PerfTime_ID_Zlab);
 			SFTIME_FINISH ();
+            
+            #ifdef __APPLE__
+                // Fix for OSX 10.14 Mojave in which nothing is displayed until the window is manually resized.
+                // This workaround is for older versions of GLFW, such as we use.  See https://github.com/glfw/glfw/issues/1334
+                static int resized=0;
+                if( !resized ) {
+                    glfwSetWindowSize( ++w, h);
+                    glfwSetWindowSize( --w, h);
+                    resized=1;
+                }
+            #endif
+            
+            
+
 		}
 
 //zTimeSleepMils( 200 );
